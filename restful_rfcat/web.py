@@ -28,6 +28,7 @@ def device_path(device):
 for device in DEVICES:
 	path = device_path(device)
 	bottle.get(path)(rest_get_state(device))
+	bottle.post(path)(rest_set_state(device))  # openhab can only post
 	bottle.put(path)(rest_set_state(device))
 	# save to index
 	klass = device.get_class()
