@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+ 
+import sys
+import time
+from rflib import *
+from struct import *
+d = RfCat()
+keyLen = 0
+baudRate = 5280
+ 
+def ConfigureD(d):
+	d.setMdmModulation(MOD_ASK_OOK)
+	d.setFreq(347999900)
+	d.makePktFLEN(keyLen)
+	d.setMdmSyncMode(0)
+	d.setMdmDRate(baudRate)
+	d.setMdmChanSpc(100000)
+	d.setChannel(20)
+	d.setPower(20)
+	#d.setMaxPower()
+ 
+commands = {
+	'fan0': '1001',
+	'fan1': '0001',
+	'fan2': '0010',
+	'fan3': '0100',
+	'light': '1000'
+}
+dip_switches = {
+	# the dip switches in the remote
+	# bridging the pin is a 1, open is 0
+	# and the digits are backwards: dip #1 (leftmost) is right bit
+	'bedroom': '1111',
+	'office': '1101',
+	'livingroom': '1011',
+	'kitchen': '0111'
+}
+bin_key = '0%s111%s' % (dip_switches['office'][::-1], commands['light'])
+
+def encode(bin_key):
+	#print "Binary (NON PWM) key:",bin_key
+	pwm_str_key = "001" #added leading 0 for clock
+	for k in bin_key:
+		x = ""
+		if(k == "0"):
+			x = "001" #  A zero is encoded as a longer low pulse (low-low-high)
+		if(k == "1"):
+			x = "011" # and a one is encoded as a shorter low pulse (low-high-high)
+		pwm_str_key = pwm_str_key + x
+	pwm_str_key = pwm_str_key + "00"
+	#print "Binary (PWM) key:",pwm_str_key
+	dec_pwm_key = int(pwm_str_key,2);
+	#print "Decimal (PWN) key:",dec_pwm_key
+	key_packed = pack(">Q",dec_pwm_key)
+	return key_packed
+key_packed = encode(bin_key)
+keyLen = len(key_packed)
+ 
+ConfigureD(d)
+time.sleep(1)
+
+location = 'office'
+if len(sys.argv) > 1:
+	user_commands = sys.argv[1].split(',')
+	user_commands = [c.strip() for c in user_commands]
+else:
+	user_commands = ['light', 'fan2', 'fan1']
+
+for command in user_commands:
+	bin_key = '0%s111%s' % (dip_switches[location][::-1], commands[command])
+	key_packed = encode(bin_key)
+	broadcast = key_packed + '\0'*2
+	#print "TX'ing key..."
+	#for i in range(0,100):
+	d.RFxmit(broadcast, repeat=50)
+	#print "Done."
+	time.sleep(1)

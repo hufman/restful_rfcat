@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+ 
+import re
+from operator import itemgetter
+from rflib import *
+
+d = RfCat()
+keyLen = 200
+baudRate = 5280
+RSSI_THRESHOLD = 180
+packet_gap = re.compile('0{20,}')
+zero_length = 25
+ 
+def configureD(d):
+	d.setMdmModulation(MOD_ASK_OOK)
+	d.setFreq(347999900)
+	d.makePktFLEN(keyLen)
+	d.setMdmSyncMode(0)
+	d.setMdmDRate(baudRate)
+	d.setMdmChanSpc(100000)
+	d.setChannel(20)
+	d.lowball(1)
+configureD(d)
+
+def decode_hunter_packet(packet):
+	if len(packet) < 6:
+		return None
+	if packet[0] != '1':
+		return None
+	bits = []
+	for counter in range(1, len(packet), 3):
+		encoded_bit = packet[counter:counter+3]
+		if encoded_bit == '001':
+			bits.append('0')
+		elif encoded_bit == '011':
+			bits.append('1')
+		else:
+			return None
+	return ''.join(bits)
+
+def handle_packet(packet, count):
+	print(packet)
+
+try:
+	rssi = 255
+	packets_seen = {}
+	saw_packet = False
+	while not chipcon_nic.keystop():
+		saw_packet = False
+		(data, time) = d.RFrecv()	# sniff some packets
+		rssi = ord(d.getRSSI())	# detect empty air
+		hex = data.encode('hex')
+		bits = bin(int(hex,16))
+		packets = packet_gap.split(bits)
+		# print(packets)
+		logical_packets = [decode_hunter_packet(p) for p in packets]
+		# print(logical_packets)
+		for p in logical_packets:
+			if p is None:
+				continue
+			saw_packet = True
+			count = packets_seen.get(p, 0)
+			packets_seen[p] = count + 1
+
+		if not saw_packet:
+			if len(packets_seen) == 0:
+				#print("rssi too low: %s" % (rssi,))
+				pass
+			else:
+				# end of transmission
+				key,count = max(packets_seen.items(), key=itemgetter(1))
+				handle_packet(key, count)
+			packets_seen.clear()
+
+finally:
+	d.lowballRestore()
