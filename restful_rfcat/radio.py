@@ -137,3 +137,48 @@ class OOKRadioChannelHack(OOKRadio):
 		Radio.device.setChannel(self.mhz_adjustment * 10)
 		Radio.device.setPower(self.power)
 
+class OOKRadioChannelScanner(OOKRadio):
+	def __init__(self, frequency, baudrate, channels):
+		self.frequency = frequency
+		self.baudrate = baudrate
+		self.channels = channels
+		self.channel_idx = 0
+		self.saw_signal_ago = 10
+
+	def _prepare_device(self, keylen):
+		self._create_device()
+		self.device.setMdmModulation(rflib.MOD_ASK_OOK)
+		self.device.setFreq(self.frequency)
+		self.device.makePktFLEN(keylen)
+		self.device.setMdmSyncMode(0)
+		self.device.setMdmDRate(self.baudrate)
+		self.device.setMdmChanSpc(100000)
+		self.device.setMdmChanBW(100000)
+		self.device.setChannel(self.channels[self.channel_idx])
+		self.device.setPower(self.power)
+
+	def receive(self):
+		with self.lock:
+			self._change_mode('receive', 50)
+			attempts = 10
+			try:
+				returned_data = ''
+				returned_time = None
+				for attempt in range(0, attempts):
+					(data, time) = self.device.RFrecv(blocksize=20)
+					returned_data += data
+					if returned_time is None:
+						returned_time = time
+					if '\0' in data:
+						self.saw_signal_ago = 0
+					if self.saw_signal_ago > 5:
+						self.channel_idx += 1
+						self.channel_idx = self.channel_idx % len(self.channels)
+						channel = self.channels[self.channel_idx]
+						self.device.setChannel(channel)
+					self.saw_signal_ago = min(self.saw_signal_ago+1, 10)
+			except rflib.chipcon_usb.ChipconUsbTimeoutException:
+				logger.warning("USB Timeout")
+				self.reset_device()
+				return (None, None)
+		return (returned_data, returned_time)
