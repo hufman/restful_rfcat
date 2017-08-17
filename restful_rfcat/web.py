@@ -22,6 +22,13 @@ def rest_set_state(device):
 		return device.set_state(state)
 	_wrapped.__name__ = 'put_%s' % (device.name,)
 	return _wrapped
+def rest_list_states(device):
+	""" Inside an HTTP PUT, set a device's state """
+	def _wrapped(*args, **kwargs):
+		bottle.response.content_type = 'text/plain'
+		return '\n'.join(device.get_available_states())
+	_wrapped.__name__ = 'put_%s' % (device.name,)
+	return _wrapped
 def device_path(device):
 	klass = device.get_class()
 	name = device.name
@@ -32,6 +39,7 @@ for device in DEVICES:
 	bottle.get(path)(rest_get_state(device))
 	bottle.post(path)(rest_set_state(device))  # openhab can only post
 	bottle.put(path)(rest_set_state(device))
+	bottle.route(path, method='OPTIONS')(rest_list_states(device))
 	# save to index
 	klass = device.get_class()
 	name = device.name
