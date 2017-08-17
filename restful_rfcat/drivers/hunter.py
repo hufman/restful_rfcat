@@ -1,34 +1,12 @@
+# A device driver to interact with Hunter ceiling fans
 from operator import itemgetter
 import logging
 import struct
 import re
 from restful_rfcat import radio, hideyhole
+from restful_rfcat.drivers._utils import DeviceDriver
 
 logger = logging.getLogger(__name__)
-
-class DeviceDriver(object):
-	def __init__(self, name, label):
-		""" Save a name and display label """
-		self.name = name
-		self.label = label
-
-	def get_class(self):
-		raise NotImplementedError
-		return "light"
-
-	def get_available_states(self):
-		raise NotImplementedError
-		return ["OFF", "1", "2", "3"]
-
-	def _get(self, key):
-		return hideyhole.get(key)
-	def _set(self, key, value):
-		hideyhole.set(key, value)
-
-	def get_state(self):
-		raise NotImplementedError
-	def set_state(self, state):
-		raise NotImplementedError
 
 class HunterCeiling(DeviceDriver):
 	devices = {}
