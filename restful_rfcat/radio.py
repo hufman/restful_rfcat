@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class Radio(object):
 	# use the same lock for all instances of the Radio class
 	lock = threading.Lock()
-	power = 50
+	power = 90
 	setup = None
 	mode = None
 
@@ -30,13 +30,14 @@ class OOKRadio(Radio):
 		self.device.setMdmSyncMode(0)
 		self.device.setMdmDRate(self.baudrate)
 		self.device.setMdmChanSpc(100000)
+		self.device.setMdmChanBW(100000)
 		self.device.setChannel(0)
 		self.device.setPower(self.power)
 
 	def _release_device(self):
 		self.device.setModeIDLE()
 
-	def r_eset_device(self):
+	def reset_device(self):
 		self._change_mode(None, None)
 		self.setup = None
 		self.device.RESET()
