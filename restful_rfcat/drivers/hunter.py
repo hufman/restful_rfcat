@@ -17,7 +17,7 @@ class HunterCeiling(DeviceDriver):
 		'fan3': '0100',
 		'light': '1000'
 	}
-	commands_rev = {v:k for k,v in commands.items()}
+	commands_rev = dict([(v,k) for k,v in commands.items()])
 	radio = radio.OOKRadioChannelHack(347999900, 5280, 2)
 
 	def __init__(self, dip_switch, **kwargs):

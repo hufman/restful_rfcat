@@ -18,7 +18,6 @@ class HamptonCeiling(DeviceDriver):
 		'lighton': '0011',
 		'lightoff': '1011'
 	}
-	commands_rev = {v:k for k,v in commands.items()}
 	radio = radio.OOKRadio(303700000, 3324)
 
 	def __init__(self, dip_switch, **kwargs):
