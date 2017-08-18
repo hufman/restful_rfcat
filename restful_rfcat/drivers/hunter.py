@@ -116,9 +116,9 @@ class HunterCeilingFan(HunterCeiling):
 		>>> HunterCeilingFan._state_to_command('1')
 		'fan1'
 		>>> HunterCeilingFan._state_to_command('0')
-		'0'
+		'fan0'
 		>>> HunterCeilingFan._state_to_command('OFF')
-		'0'
+		'fan0'
 		"""
 		command = 'fan%s' % (state,)
 		if state == 'OFF':
@@ -166,9 +166,9 @@ class HunterCeilingEavesdropper(HunterCeiling):
 	@staticmethod
 	def _decode_symbols(symbols):
 		""" Turns a string of radio symbols into a PCM-decoded packet
-		>>> HunterCeilingEavesdropping._decode_symbols("1001011001011")
+		>>> HunterCeilingEavesdropper._decode_symbols("1001011001011")
 		'0101'
-		>>> HunterCeilingEavesdropping._decode_symbols( \
+		>>> HunterCeilingEavesdropper._decode_symbols( \
 			'1'+HunterCeiling._encode_pwm("001001110101") \
 		)
 		'001001110101'
@@ -193,7 +193,7 @@ class HunterCeilingEavesdropper(HunterCeiling):
 	def _parse_packet(packet):
 		""" Returns (dip_switch, command) for a valid packet
 		    else returns (None, None)
-		>>> HunterCeilingEavesdropping._parse_packet("001001110101")
+		>>> HunterCeilingEavesdropper._parse_packet("001001110101")
 		('0010', '0101')
 		"""
 		if len(packet) == 12:
@@ -206,9 +206,9 @@ class HunterCeilingEavesdropper(HunterCeiling):
 	def validate_packet(klass, packet):
 		""" Given a decoded packet
 		    check that the given packet is syntactical
-		>>> HunterCeilingEavesdropping.validate_packet("001001110101")
+		>>> HunterCeilingEavesdropper.validate_packet("001001110101")
 		False
-		>>> HunterCeilingEavesdropping.validate_packet("001001110100")
+		>>> HunterCeilingEavesdropper.validate_packet("001001110100")
 		True
 		"""
 		if packet is None:
