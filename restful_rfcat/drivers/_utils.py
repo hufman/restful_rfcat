@@ -1,3 +1,5 @@
+from restful_rfcat import hideyhole
+
 # Useful utilities or classes for drivers
 class DeviceDriver(object):
 	def __init__(self, name, label):
