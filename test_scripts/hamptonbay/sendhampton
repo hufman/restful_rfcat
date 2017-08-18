@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+ 
+import sys
+import time
+from rflib import *
+from struct import *
+d = RfCat()
+keyLen = 0
+baudRate = 3324
+ 
+def ConfigureD(d):
+	d.setMdmModulation(MOD_ASK_OOK)
+	d.setFreq(303700000)
+	d.setMdmSyncMode(0)
+	d.setMdmDRate(baudRate)
+	d.setMdmChanSpc(100000)
+	#d.setChannel(20)
+	d.setChannel(00)
+	d.setPower(100)
+	#d.setMaxPower()
+	#d._debug = 5
+ 
+commands = {
+	'lightoff+fan0': '11111010',
+	'lightoff+fan1': '10011010',
+	'lightoff+fan2': '10111010',
+	'lightoff+fan3': '11011010',
+	'lighton+fan0': '01111010',
+	'lighton+fan1': '00011010',
+	'lighton+fan2': '00111010',
+	'lighton+fan3': '01011010'
+}
+dip_switches = {
+	# the dip switches in the remote
+	# bridging the pin is a 1, open is 0
+	# and the digits are backwards: dip #1 (leftmost) is right bit
+	'office': '1111',
+	'bedroom': '0111'
+}
+
+def encode(bin_key):
+	#print "Binary (NON PWM) key:",bin_key
+	pwm_str_key = "" #added leading 0 for clock
+	for k in bin_key:
+		x = ""
+		if(k == "0"):
+			x = "001" #  A zero is encoded as a longer low pulse (low-low-high)
+		if(k == "1"):
+			x = "011" # and a one is encoded as a shorter low pulse (low-high-high)
+		pwm_str_key = pwm_str_key + x
+	pwm_str_key = pwm_str_key + "0"*22
+	#print "Binary (PWM) key:",pwm_str_key
+	dec_pwm_key = int(pwm_str_key,2);
+	#print "Decimal (PWN) key:",dec_pwm_key
+	key_packed = ""
+	while dec_pwm_key > 0:
+		key_packed = pack(">Q",dec_pwm_key & (2**64-1)) + key_packed
+		dec_pwm_key = dec_pwm_key >> 64
+	return key_packed
+ 
+ConfigureD(d)
+
+if len(sys.argv) > 1:
+	user_commands = sys.argv[1].split(',')
+else:
+	user_commands = ['lighton', 'lightoff', 'fan1']
+#for command in ['fan0', 'fan1', 'fan2', 'fan3', 'fan0', 'light', 'light']:
+#for command in ['light', 'fan2', 'fan1']:
+#d.setModeTX()
+#working = '0111111111111100111010'
+for command in user_commands:
+	bin_key = '0111%s111111%s' % (dip_switches['office'][::-1], commands[command])
+	print(bin_key)
+	key_packed = encode(bin_key)
+	broadcast = key_packed
+	#print "TX'ing key..."
+	#for i in range(0,100):
+	d.RFxmit(broadcast, repeat=20)
+	#print "Done."
+print("Done sending")
+
+d.setModeIDLE()
+
