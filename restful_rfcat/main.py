@@ -14,14 +14,16 @@ def sniff():
 	eavesdropper.radio.reset_device()
 
 def shutdown(*args):
-        radio_loop_stop.set()
-        sniffer.join(2)
-        sys.exit()
-signal.signal(signal.SIGINT, shutdown)
+	radio_loop_stop.set()
+	sniffer.join(2)
+	sys.exit()
 
-radio_loop_stop = threading.Event()
-sniffer = threading.Thread(target=sniff)
-sniffer.daemon = True
-sniffer.start()
+if __name__ == '__main__':
+	signal.signal(signal.SIGINT, shutdown)
 
-restful_rfcat.web.run_webserver()
+	radio_loop_stop = threading.Event()
+	sniffer = threading.Thread(target=sniff)
+	sniffer.daemon = True
+	sniffer.start()
+
+	restful_rfcat.web.run_webserver()
