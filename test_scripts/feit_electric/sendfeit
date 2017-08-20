@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+ 
+import sys
+import time
+from rflib import *
+from struct import *
+d = RfCat()
+baudRate = 4880
+ 
+def ConfigureD(d):
+	d.setMdmModulation(MOD_ASK_OOK)
+	d.setFreq(433900000)
+	d.setMdmSyncMode(0)
+	d.setMdmDRate(baudRate)
+	d.setMdmChanSpc(100000)
+	d.setMdmChanBW(187500)
+	d.setChannel(0)
+	#d.setPower(50)
+	d.setMaxPower()
+
+def encode(bin_key):
+	print "Binary (NON PWM) key:",bin_key
+	pwm_str_key=""
+	for k in bin_key:
+		x = ""
+		if(k == "0"):
+			x = "00" #  A zero is encoded as a longer low pulse (low-low-high)
+		if(k == "1"):
+			x = "10" # and a one is encoded as a shorter low pulse (low-high-high)
+		pwm_str_key = pwm_str_key + x
+	pwm_str_key = pwm_str_key
+	print "Binary (PWM) key:",pwm_str_key
+	dec_pwm_key = int(pwm_str_key,2);
+	print "Decimal (PWN) key:",dec_pwm_key
+	key_packed = ""
+	while dec_pwm_key > 0:
+		key_packed = pack(">Q",dec_pwm_key & (2**64-1)) + key_packed
+		dec_pwm_key = dec_pwm_key >> 64
+	key_packed = '\0\0' + key_packed.strip('\0')
+	return key_packed
+
+addresses = {
+	'home':   '0110110111110101011110101111',
+	'friend': '1101011011110101110101101111'
+}
+commands = {
+	'power': '11110100',
+	'off':   '11101100',
+	'off2':  '11101110',
+	'minus': '11011100',	# direction left
+	'plus':  '10111100',	# direction right
+	'up':    '11101010',	# direction up
+	'down':  '11010101',	# direction down
+	'red':   '11011010',
+	'green': '10101110',
+	'blue':  '10110101',
+	'white': '10111010',
+	'cycle': '11010110'
+}
+address = addresses['home']
+bin_key = address + commands[sys.argv[1]]
+#bin_key = address + '11110110'
+#bin_key = '110101101111010111010110111111110100' # on
+#bin_key = '110101101111010111010110111111101100' # off
+#bin_key = '110101101111010111010110111111110100' # on
+#bin_key = '0110 11011111 01010111 10101111 11110100'
+key_packed = encode(bin_key)
+
+ConfigureD(d)
+#time.sleep(0.1)
+
+broadcast = key_packed# + '\0'
+print "TX'ing key..."
+#for i in range(0,100):
+d.makePktFLEN(len(broadcast))
+d.RFxmit(broadcast, repeat=36)
+

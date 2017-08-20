@@ -22,3 +22,7 @@ for name, dip in hunter_dip_switches.items():
 	DEVICES.append(
 		HunterCeilingLight(name=name, label=name_labels[name], dip_switch=dip)
 	)
+
+DEVICES.append(
+	FeitElectricLights(name="patioleds", label="Patio Light String", address="0110110111110101011110101111")
+)
