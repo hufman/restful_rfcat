@@ -40,6 +40,14 @@ for device in DEVICES:
 	bottle.post(path)(rest_set_state(device))  # openhab can only post
 	bottle.put(path)(rest_set_state(device))
 	bottle.route(path, method='OPTIONS')(rest_list_states(device))
+	# check for subdevices
+	if hasattr(device, 'subdevices'):
+		for name,subdev in device.subdevices().items():
+			subpath = '%s/%s' % (path, name)
+			bottle.get(subpath)(rest_get_state(subdev))
+			bottle.post(subpath)(rest_set_state(subdev))  # openhab can only post
+			bottle.put(subpath)(rest_set_state(subdev))
+			bottle.route(subpath, method='OPTIONS')(rest_list_states(subdev))
 	# save to index
 	klass = device.get_class()
 	name = device.name
