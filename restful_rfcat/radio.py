@@ -8,86 +8,104 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Radio(object):
+	power = 90
 	# use the same lock for all instances of the Radio class
 	lock = threading.Lock()
-	power = 90
-	setup = None
-	mode = None
+	device = None
+	claimed = None	# which instance has claimed the radio
+	mode = None	# whether we are in send/receive mode
 
-	def _create_device(self):
-		if not hasattr(self, 'device'):
-			self.device = rflib.RfCat()
+	@staticmethod
+	def _create_device():
+		if Radio.device is None:
+			Radio.device = rflib.RfCat()
 
 class OOKRadio(Radio):
 	def __init__(self, frequency, baudrate):
 		self.frequency = frequency
 		self.baudrate = baudrate
 
-	def _prepare_device(self, keylen):
-		self._create_device()
-		self.device.setMdmModulation(rflib.MOD_ASK_OOK)
-		self.device.setFreq(self.frequency)
-		self.device.setMdmSyncMode(0)
-		self.device.setMdmDRate(self.baudrate)
-		self.device.setMdmChanSpc(100000)
-		self.device.setMdmChanBW(100000)
-		self.device.setChannel(0)
-		self.device.setPower(self.power)
+	def _prepare_device(self):
+		Radio._create_device()
+		Radio.device.setMdmModulation(rflib.MOD_ASK_OOK)
+		Radio.device.setFreq(self.frequency)
+		Radio.device.setMdmSyncMode(0)
+		Radio.device.setMdmDRate(self.baudrate)
+		Radio.device.setMdmChanSpc(100000)
+		Radio.device.setMdmChanBW(100000)
+		Radio.device.setChannel(0)
+		Radio.device.setPower(self.power)
 
 	def _release_device(self):
+		logger.info("Releasing radio")
+		if Radio.mode is not None:
+			logger.info("Turning off radio mode %s" % (Radio.mode,))
+			release = getattr(self, '_release_%s' % (Radio.mode,))
+			release()
+		Radio.mode = None
 		self.device.setModeIDLE()
 
 	def reset_device(self):
-		self._change_mode(None, None)
-		self.setup = None
-		self.device.RESET()
+		try:
+			self._release_device()
+		except:
+			pass
+		Radio.claimed = None
 
-	def _change_mode(self, mode, keylen):
-		if self.setup == self and \
-		   self.mode == mode:
+	def _change_mode(self, mode):
+		if Radio.claimed == self and \
+		   Radio.mode == mode:
+			# already in the correct mode
 			return
-		if self.setup != self:
-			if self.setup is not None:
-				self._release_device()
-			self._prepare_device(keylen)
-			self.setup = self
-		if keylen is not None:
-			self.device.makePktFLEN(keylen)
-		if self.mode is not None and self.mode != mode:
-			release = getattr(self, '_release_%s' % (self.mode,))
+		if Radio.claimed != self:
+			if Radio.claimed is not None:
+				logger.info("Claiming radio from other config")
+				Radio.claimed._release_device()
+			self._prepare_device()
+			Radio.claimed = self
+		if Radio.mode is not None and Radio.mode != mode:
+			logger.info("Switching radio mode from %s" % (Radio.mode,))
+			release = getattr(self, '_release_%s' % (Radio.mode,))
 			release()
-		self.mode = mode
-		if self.mode is not None:
-			prepare = getattr(self, '_prepare_to_%s' % (self.mode,))
-			prepare(keylen)
+		Radio.mode = mode
+		if mode is not None:
+			logger.info("Setting radio mode to %s" % (mode,))
+			prepare = getattr(self, '_prepare_to_%s' % (mode,))
+			prepare()
 		#self.device.printRadioConfig()
 
-	def _prepare_to_send(self, keylen):
+	def _prepare_to_send(self):
 		time.sleep(0.05)
 
 	def _release_send(self):
 		time.sleep(0.05)
 
-	def _prepare_to_receive(self, keylen):
+	def _prepare_to_receive(self):
 		time.sleep(0.05)
-		self.device.setModeRX()
-		self.device.lowball(1)
+		Radio.device.setModeRX()
+		Radio.device.lowball(0)
 
 	def _release_receive(self):
-		self.device.lowballRestore()
+		if hasattr(Radio.device, '_last_radiocfg'):
+			Radio.device.lowballRestore()
 		time.sleep(0.05)
-		self._release_device()
+		self.device.setModeIDLE()
 
 	def send(self, bytes, repeat=25):
-		with self.lock:
-			self._change_mode('send', len(bytes))
-			self.device.RFxmit(bytes, repeat=repeat)
+		with Radio.lock:
+			try:
+				self._change_mode('send')
+				Radio.device.RFxmit(bytes, repeat=repeat)
+			except rflib.chipcon_usb.ChipconUsbTimeoutException:
+				logger.warning("USB Timeout")
+				self.reset_device()
+				raise Exception("RFCat failure")
 
 	def receive(self):
-		with self.lock:
-			self._change_mode('receive', 50)
+		with Radio.lock:
+			self._change_mode('receive')
 			try:
-				(data, time) = self.device.RFrecv()
+				(data, time) = Radio.device.RFrecv()
 			except rflib.chipcon_usb.ChipconUsbTimeoutException:
 				logger.warning("USB Timeout")
 				self.reset_device()
@@ -109,14 +127,13 @@ class OOKRadioChannelHack(OOKRadio):
 		self.baudrate = baudrate
 		self.mhz_adjustment = mhz_adjustment
 
-	def _prepare_device(self, keylen):
-		self._create_device()
-		self.device.setMdmModulation(rflib.MOD_ASK_OOK)
-		self.device.setFreq(self.frequency)
-		self.device.makePktFLEN(keylen)
-		self.device.setMdmSyncMode(0)
-		self.device.setMdmDRate(self.baudrate)
-		self.device.setMdmChanSpc(100000)
-		self.device.setChannel(self.mhz_adjustment * 10)
-		self.device.setPower(self.power)
+	def _prepare_device(self):
+		Radio._create_device()
+		Radio.device.setMdmModulation(rflib.MOD_ASK_OOK)
+		Radio.device.setFreq(self.frequency)
+		Radio.device.setMdmSyncMode(0)
+		Radio.device.setMdmDRate(self.baudrate)
+		Radio.device.setMdmChanSpc(100000)
+		Radio.device.setChannel(self.mhz_adjustment * 10)
+		Radio.device.setPower(self.power)
 
