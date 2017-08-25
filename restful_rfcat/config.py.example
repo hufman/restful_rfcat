@@ -1,20 +1,26 @@
 from restful_rfcat.drivers import *
 
+# Easy way to templatize device creation
 hunter_dip_switches = {
 	'bedroom': '1111',
 	'office': '1101',
 	'livingroom': '1011',
 	'diningroom': '0111'
 }
+hampton_dip_switches = {
+	'sunroom': '0111'
+}
 name_labels = {
 	'bedroom': 'Bedroom',
 	'office': 'Office',
 	'livingroom': 'Living Room',
-	'diningroom': 'Dining Room'
+	'diningroom': 'Dining Room',
+	'sunroom': 'Sun Room'
 }
 
 DEVICES = []
 
+# Hunter fans have a light in them also
 for name, dip in hunter_dip_switches.items():
 	DEVICES.append(
 		HunterCeilingFan(name=name, label=name_labels[name], dip_switch=dip)
@@ -23,6 +29,16 @@ for name, dip in hunter_dip_switches.items():
 		HunterCeilingLight(name=name, label=name_labels[name], dip_switch=dip)
 	)
 
+# Hampton fans also have a light in them
+for name, dip in hampton_dip_switches.items():
+	DEVICES.append(
+		HamptonCeilingFan(name=name, label=name_labels[name], dip_switch=dip)
+	)
+	DEVICES.append(
+		HamptonCeilingLight(name=name, label=name_labels[name], dip_switch=dip)
+	)
+
+# Simple device addition
 DEVICES.append(
 	FeitElectricLights(name="patioleds", label="Patio Light String", address="0110110111110101011110101111")
 )
