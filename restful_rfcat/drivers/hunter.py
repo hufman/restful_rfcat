@@ -166,7 +166,7 @@ class HunterCeilingLight(HunterCeiling):
 		return state
 
 class HunterCeilingEavesdropper(HunterCeiling):
-	radio = radio.OOKRadioChannelHack(347999900, 5280, 2.1, 200000)
+	radio = radio.OOKRadioChannelHack(347999900, 5280, 2.1, 250000)
 	def __init__(self):
 		# don't register as a device with the regular super constractor
 		self.packets_seen = {}
