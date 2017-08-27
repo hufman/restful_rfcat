@@ -243,18 +243,24 @@ class HunterCeilingEavesdropper(HunterCeiling):
 				state = command[3]
 				if state == '0':
 					state = 'OFF'
-			elif command.startswith('light') and found_device is not None:
-				# toggle light
-				old_state = found_device._get()
-				available_states = found_device.get_available_states()
-				try:
-					old_state_index = available_states.index(old_state)
-					new_state_index = len(available_states) - 1 - old_state_index
-					state = available_states[new_state_index]
-				except ValueError:
-					# don't know current state, don't guess new state
-					pass
+			elif command.startswith('light'):
+				if found_device is not None:
+					# toggle light
+					old_state = found_device._get()
+					available_states = found_device.get_available_states()
+					try:
+						old_state_index = available_states.index(old_state)
+						new_state_index = len(available_states) - 1 - old_state_index
+						state = available_states[new_state_index]
+					except ValueError:
+						# don't know current state, don't guess new state
+						pass
+				if count > 47:
+					# dim command, not a toggle
+					# so assume that the light was turned on
+					state = 'ON'
 			if found_device is not None and state is not None:
+				logger.info("Eavesdropped command to turn %s-%s to %s" % (found_device.name, device_type, state))
 				found_device._set(state)
 
 	def eavesdrop(self):
