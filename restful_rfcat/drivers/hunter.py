@@ -159,6 +159,7 @@ class HunterCeilingLight(HunterCeiling):
 		return state
 
 class HunterCeilingEavesdropper(HunterCeiling):
+	radio = radio.OOKRadioChannelHack(347999900, 5280, 2.1, 200000)
 	def __init__(self):
 		# don't register as a device with the regular super constractor
 		self.packets_seen = {}
@@ -172,17 +173,23 @@ class HunterCeilingEavesdropper(HunterCeiling):
 			'1'+HunterCeiling._encode_pwm("001001110101") \
 		)
 		'001001110101'
+
+		# sometimes the 0 bits get held a little longer
+		>>> HunterCeilingEavesdropper._decode_symbols("10010011001011")
+		'0101'
 		"""
 		if len(symbols) < 6:
 			return None
 		if symbols[0] != '1':
 			return None
 		bits = []
-		for counter in range(1, len(symbols), 3):
-			encoded_bit = symbols[counter:counter+3]
-			if encoded_bit == '001':
+		counter = 1
+		found_bits = re.findall('0+(1+)', symbols[1:])
+		for one_bits in found_bits:
+			ones = len(one_bits)
+			if ones == 1:
 				bits.append('0')
-			elif encoded_bit == '011':
+			elif ones == 2:
 				bits.append('1')
 			else:
 				# invalid sequence
@@ -219,7 +226,7 @@ class HunterCeilingEavesdropper(HunterCeiling):
 	@classmethod
 	def handle_packet(klass, packet, count):
 		(dip_switch, command) = klass._parse_packet(packet)
-		logger.info("Overheard command %s to %s" % (command, dip_switch))
+		logger.info("Overheard command %s to %s, %s times" % (command, dip_switch, count))
 		if command is not None and command in klass.commands_rev:
 			# find device
 			command = klass.commands_rev[command]
