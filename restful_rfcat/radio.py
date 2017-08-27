@@ -21,9 +21,10 @@ class Radio(object):
 			Radio.device = rflib.RfCat()
 
 class OOKRadio(Radio):
-	def __init__(self, frequency, baudrate):
+	def __init__(self, frequency, baudrate, bandwidth=100000):
 		self.frequency = frequency
 		self.baudrate = baudrate
+		self.bandwidth = bandwidth
 
 	def _prepare_device(self):
 		Radio._create_device()
@@ -32,7 +33,7 @@ class OOKRadio(Radio):
 		Radio.device.setMdmSyncMode(0)
 		Radio.device.setMdmDRate(self.baudrate)
 		Radio.device.setMdmChanSpc(100000)
-		Radio.device.setMdmChanBW(100000)
+		Radio.device.setMdmChanBW(self.bandwidth)
 		Radio.device.setChannel(0)
 		Radio.device.setPower(self.power)
 
@@ -118,14 +119,17 @@ class OOKRadio(Radio):
 			return None
 		hex = data.encode('hex')
 		bits = bin(int(hex,16))
+		if bits.startswith('0b'):
+			bits = bits[2:]
 		packets = re.split('0{%i,}' % (gap,), bits)
 		return packets
 
 class OOKRadioChannelHack(OOKRadio):
-	def __init__(self, frequency, baudrate, mhz_adjustment):
+	def __init__(self, frequency, baudrate, mhz_adjustment, bandwidth=100000):
 		self.frequency = frequency
 		self.baudrate = baudrate
 		self.mhz_adjustment = mhz_adjustment
+		self.bandwidth = bandwidth
 
 	def _prepare_device(self):
 		Radio._create_device()
@@ -134,6 +138,7 @@ class OOKRadioChannelHack(OOKRadio):
 		Radio.device.setMdmSyncMode(0)
 		Radio.device.setMdmDRate(self.baudrate)
 		Radio.device.setMdmChanSpc(100000)
-		Radio.device.setChannel(self.mhz_adjustment * 10)
+		Radio.device.setChannel(int(self.mhz_adjustment * 10))
+		Radio.device.setMdmChanBW(self.bandwidth)
 		Radio.device.setPower(self.power)
 
