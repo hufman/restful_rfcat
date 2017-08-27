@@ -67,13 +67,16 @@ class HunterCeiling(DeviceDriver):
 		return key_packed
 
 	@classmethod
-	def _send(klass, bits):
+	def _send(klass, bits, repeat=None):
 		symbols = klass._encode(bits)
-		klass.radio.send(symbols + '\x00')
+		if repeat is None:
+			klass.radio.send(symbols + '\x00')
+		else:
+			klass.radio.send(symbols + '\x00', repeat)
 
-	def _send_command(self, command):
+	def _send_command(self, command, repeat=None):
 		logger.info("Sending command %s to %s" % (command, self.dip_switch))
-		self._send(self._get_bin_key(command))
+		self._send(self._get_bin_key(command), repeat)
 
 	def _get_bin_key(self, command):
 		"""
@@ -154,7 +157,11 @@ class HunterCeilingLight(HunterCeiling):
 	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
-		self._send_command('light')
+		repeat = None
+		if state == "ON" and self._get() == "ON":
+			logger.info("%s light should already be on, forcing on" % (self.name,))
+			repeat = 100	# send a dim command to force on
+		self._send_command('light', repeat)
 		self._set(state)
 		return state
 
