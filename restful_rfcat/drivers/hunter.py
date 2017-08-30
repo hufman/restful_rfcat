@@ -4,11 +4,11 @@ import logging
 import struct
 import re
 from restful_rfcat import radio, hideyhole
-from restful_rfcat.drivers._utils import DeviceDriver
+from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin
 
 logger = logging.getLogger(__name__)
 
-class HunterCeiling(DeviceDriver):
+class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 	devices = {}
 	commands = {
 		'fan0': '1001',
@@ -37,28 +37,12 @@ class HunterCeiling(DeviceDriver):
 		self.devices[device_name] = self
 
 	@staticmethod
-	def _encode_pwm(bin_key):
-		"""
-		>>> HunterCeiling._encode_pwm("00110011")
-		'001001011011001001011011'
-		"""
-		pwm_str_key = []
-		for k in bin_key:
-			x = ""
-			if(k == "0"):
-				x = "001" #  A zero is encoded as a longer low pulse (low-low-high)
-			if(k == "1"):
-				x = "011" # and a one is encoded as a shorter low pulse (low-high-high)
-			pwm_str_key.append(x)
-		return ''.join(pwm_str_key)
-
-	@staticmethod
 	def _encode(bin_key):
 		"""
 		>>> print(HunterCeiling._encode("00110011"))
 		\x00\x00\x00\x00\x01%\xb2[
 		"""
-		pwm_str_key = HunterCeiling._encode_pwm(bin_key)
+		pwm_str_key = HunterCeiling._encode_pwm_symbols(bin_key)
 		pwm_str_key = "001" + pwm_str_key #added leading 0 for clock
 		#print "Binary (PWM) key:",pwm_str_key
 		dec_pwm_key = int(pwm_str_key, 2);
@@ -172,36 +156,24 @@ class HunterCeilingEavesdropper(HunterCeiling):
 		self.packets_seen = {}
 
 	@staticmethod
-	def _decode_symbols(symbols):
-		""" Turns a string of radio symbols into a PCM-decoded packet
-		>>> HunterCeilingEavesdropper._decode_symbols("1001011001011")
+	def _decode_pwm_symbols(symbols):
+		""" Decode the eavesdropped remote control transmission into a PWM-decoded packet
+		    Since it starts with a clock bit, strip it before processing as PWM
+
+		>>> HunterCeilingEavesdropper._decode_pwm_symbols("1001011001011")
 		'0101'
-		>>> HunterCeilingEavesdropper._decode_symbols( \
-			'1'+HunterCeiling._encode_pwm("001001110101") \
+		>>> HunterCeilingEavesdropper._decode_pwm_symbols( \
+		        '1'+HunterCeiling._encode_pwm_symbols("001001110101") \
 		)
 		'001001110101'
 
 		# sometimes the 0 bits get held a little longer
-		>>> HunterCeilingEavesdropper._decode_symbols("10010011001011")
+		>>> HunterCeilingEavesdropper._decode_pwm_symbols("10010011001011")
 		'0101'
 		"""
-		if len(symbols) < 6:
+		if symbols is None or len(symbols) < 10 or symbols[0] != '1':
 			return None
-		if symbols[0] != '1':
-			return None
-		bits = []
-		counter = 1
-		found_bits = re.findall('0+(1+)', symbols[1:])
-		for one_bits in found_bits:
-			ones = len(one_bits)
-			if ones == 1:
-				bits.append('0')
-			elif ones == 2:
-				bits.append('1')
-			else:
-				# invalid sequence
-				return None
-		return ''.join(bits)
+		return HunterCeiling._decode_pwm_symbols(symbols[1:])
 
 	@staticmethod
 	def _parse_packet(packet):
@@ -276,7 +248,8 @@ class HunterCeilingEavesdropper(HunterCeiling):
 		if packets is None:
 			# error, try again next time
 			return None
-		logical_packets = [self._decode_symbols(p) for p in packets]
+		# try to parse each packet, skipping the clock bit at the start
+		logical_packets = [self._decode_pwm_symbols(p) for p in packets]
 		for p in logical_packets:
 			if not self.validate_packet(p):
 				continue

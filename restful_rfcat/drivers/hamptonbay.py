@@ -4,11 +4,11 @@ import logging
 import struct
 import re
 from restful_rfcat import radio, hideyhole
-from restful_rfcat.drivers._utils import DeviceDriver
+from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin
 
 logger = logging.getLogger(__name__)
 
-class HamptonCeiling(DeviceDriver):
+class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 	devices = {}
 	commands = {
 		'fan0': '1111',
@@ -42,28 +42,12 @@ class HamptonCeiling(DeviceDriver):
 		return klass.devices.get(device_name)
 
 	@staticmethod
-	def _encode_pwm(bin_key):
-		"""
-		>>> HamptonCeiling._encode_pwm("00110011")
-		'001001011011001001011011'
-		"""
-		pwm_str_key = []
-		for k in bin_key:
-			x = ""
-			if(k == "0"):
-				x = "001" #  A zero is encoded as a longer low pulse (low-low-high)
-			if(k == "1"):
-				x = "011" # and a one is encoded as a shorter low pulse (low-high-high)
-			pwm_str_key.append(x)
-		return ''.join(pwm_str_key)
-
-	@staticmethod
 	def _encode(bin_key):
 		"""
 		>>> print(HamptonCeiling._encode("00110011"))
 		\x00\x00\x00\x00\x00%\xb2[
 		"""
-		pwm_str_key = HamptonCeiling._encode_pwm(bin_key)
+		pwm_str_key = HamptonCeiling._encode_pwm_symbols(bin_key)
 		pwm_str_key = "" + pwm_str_key #added leading 0 for clock
 		#print "Binary (PWM) key:",pwm_str_key
 		dec_pwm_key = int(pwm_str_key, 2);
