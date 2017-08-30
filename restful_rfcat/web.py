@@ -1,8 +1,14 @@
 import bottle
+import os
+import time
 from markup import markup
 from restful_rfcat.config import DEVICES
+import restful_rfcat.pubsub
+import Queue
 
 device_list = {}
+
+script_path = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 # define all the devices
 def rest_get_state(device):
@@ -58,7 +64,7 @@ for device in DEVICES:
 @bottle.get('/')
 def index():
 	page = markup.page()
-	page.init()
+	page.init(script=['app.js'])
 	for klass in sorted(device_list.keys()):
 		klass_devices = device_list[klass]
 		page.h2(klass)
@@ -68,8 +74,46 @@ def index():
 			state = device.get_state()
 			if state is None:
 				state = "Unknown"
-			page.ul("%s - %s" % (path, state))
+			page.li.open()
+			page.span("%s - " % (path,))
+			page.span(state, id='%s-state'%(path,))
+			page.li.close()
 	return str(page)
+
+@bottle.get('/app.js')
+def appjs():
+	return bottle.static_file('app.js', root=script_path)
+
+@bottle.get('/stream')
+def stream():
+	# example code from https://gist.github.com/werediver/4358735
+	bottle.response.content_type = 'text/event-stream'
+	bottle.response.cache_control = 'no-cache'
+
+	yield 'retry: 10\n\n'
+
+	# output the current state
+	for klass in sorted(device_list.keys()):
+		klass_devices = device_list[klass]
+		for name in sorted(klass_devices.keys()):
+			device = klass_devices[name]
+			path = device_path(device)
+			state = device.get_state()
+			if state is None:
+				state = "Unknown"
+			yield 'data: %s=%s\n\n' % (path, state)
+
+	with restful_rfcat.pubsub.subscribe() as events:
+		end = time.time() + 3600
+		while time.time() < end:
+			try:
+				data = events.get(block=True, timeout=30)
+			except Queue.Empty:
+				yield ':\n\n'
+				continue
+			device = data['device']
+			path = device_path(device)
+			yield 'data: %s=%s\n\n' % (path, data['state'])
 
 def run_webserver():
 	bottle.run(server='paste', host='0.0.0.0', port=3350)

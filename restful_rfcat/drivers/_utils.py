@@ -1,5 +1,5 @@
 import re
-from restful_rfcat import hideyhole
+from restful_rfcat import hideyhole, pubsub
 
 # Useful utilities or classes for drivers
 class DeviceDriver(object):
@@ -20,6 +20,7 @@ class DeviceDriver(object):
 		return hideyhole.get(key)
 	def _set(self, key, value):
 		hideyhole.set(key, value)
+		pubsub.publish("", {'device':self, 'state':value})
 
 	def get_state(self):
 		raise NotImplementedError
