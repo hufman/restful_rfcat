@@ -1,5 +1,8 @@
 import bottle
+from bottle_swagger import SwaggerPlugin
 from markup import markup
+import os
+import yaml
 from restful_rfcat.config import DEVICES
 
 device_list = {}
@@ -71,7 +74,15 @@ def index():
 			page.ul("%s - %s" % (path, state))
 	return str(page)
 
+# add swagger interface
+def load_swagger():
+	path = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+	swagger_path = os.path.join(path, 'api.swagger')
+	with open(swagger_path, 'r') as swagger_file:
+		return yaml.load(swagger_file)
+
 def run_webserver():
+	bottle.install(SwaggerPlugin(load_swagger(), ignore_undefined_routes=True))
 	bottle.run(server='paste', host='0.0.0.0', port=3350)
 
 if __name__ == '__main__':

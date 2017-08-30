@@ -1,0 +1,91 @@
+swagger: "2.0"
+info:
+  title: RESTful RfCat
+  description: RESTful interface to rfcat-controlled devices
+  version: "0.1"
+
+schemes:
+  - http
+basePath: /
+
+definitions:
+  schema_device_state:
+    type: string
+    pattern: "(ON|OFF|3|.*)"
+
+parameters:
+  device_type:
+    name: device_type
+    in: path
+    description: The type of device
+    required: true
+    type: string
+    pattern: "(lights|fans|.*)"
+  item:
+    name: item
+    in: path
+    description: ID of the device
+    required: true
+    type: string
+    pattern: "(office|bedroom|kitchen|.*)"
+
+paths:
+  /{device_type}/{item}:
+    get:
+      summary: gets the current device state
+      produces:
+        - text/plain
+      parameters:
+        - "$ref": "#/parameters/device_type"
+        - "$ref": "#/parameters/item"
+      responses:
+        "200":
+          description: Current state of the device
+          schema:
+            $ref: "#/definitions/schema_device_state"
+        "404":
+          description: Invalid device
+    put:
+      summary: sets the current device state
+      consumes:
+        - text/plain
+      produces:
+        - text/plain
+      parameters:
+        - "$ref": "#/parameters/device_type"
+        - "$ref": "#/parameters/item"
+        - name: desired_state
+          in: body
+          description: The desired state for the device
+          required: true
+          schema:
+            $ref: "#/definitions/schema_device_state"
+      responses:
+        "200":
+          description: Updated state of the device
+          schema:
+            "$ref": "#/definitions/schema_device_state"
+        "404":
+          description: Invalid device
+    post:
+      summary: sets the current device state
+      consumes:
+        - text/plain
+      produces:
+        - text/plain
+      parameters:
+        - "$ref": "#/parameters/device_type"
+        - "$ref": "#/parameters/item"
+        - name: desired_state
+          in: body
+          description: The desired state for the device
+          required: true
+          schema:
+            "$ref": "#/definitions/schema_device_state"
+      responses:
+        "200":
+          description: Updated state of the device
+          schema:
+            "$ref": "#/definitions/schema_device_state"
+        "404":
+          description: Invalid device
