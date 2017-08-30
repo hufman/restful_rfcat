@@ -10,8 +10,8 @@ Installation
 2. `cd restful_rfcat`
 3. `virtualenv --python=/usr/bin/python2.7 venv`
 4. `venv/bin/pip install -r requirements.txt`
-5. `cp restful_rfcat/config.py.example restful_rfcat/config.py`
-6. `$EDITOR restful_rfcat/config.py`
+5. `cp restful_rfcat/localconfig.py.example restful_rfcat/localconfig.py`
+6. `$EDITOR restful_rfcat/localconfig.py`
 
 Configuration
 -------------
