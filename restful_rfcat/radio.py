@@ -106,7 +106,7 @@ class OOKRadio(Radio):
 		with Radio.lock:
 			self._change_mode('receive')
 			try:
-				(data, time) = Radio.device.RFrecv()
+				(data, time) = Radio.device.RFrecv(blocksize=50)
 			except rflib.chipcon_usb.ChipconUsbTimeoutException:
 				logger.warning("USB Timeout")
 				self.reset_device()
