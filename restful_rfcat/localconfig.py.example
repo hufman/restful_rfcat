@@ -42,3 +42,6 @@ for name, dip in hampton_dip_switches.items():
 DEVICES.append(
 	FeitElectricLights(name="patioleds", label="Patio Light String", address="0110110111110101011110101111")
 )
+
+DEVICES.append(FakeLight(name="fake", label="Fake light for testing"))
+DEVICES.append(FakeFan(name="fake", label="Fake fan for testing"))

@@ -26,6 +26,24 @@ class DeviceDriver(object):
 	def set_state(self, state):
 		raise NotImplementedError
 
+class FakeDevice(DeviceDriver):
+	def get_class(self):
+		return self.CLASS
+	def get_state(self):
+		return self._get("%s/%s" % (self.CLASS, self.name))
+	def set_state(self, state):
+		return self._set("%s/%s" % (self.CLASS, self.name), state)
+
+class FakeLight(FakeDevice):
+	CLASS = "light"
+	def get_available_states(self):
+		return ["OFF", "ON"]
+
+class FakeFan(FakeDevice):
+	CLASS = "fan"
+	def get_available_states(self):
+		return ["OFF", "LOW", "MED", "HI"]
+
 class PWMThreeSymbolMixin(object):
 	@staticmethod
 	def _encode_pwm_symbols(bit_string):
