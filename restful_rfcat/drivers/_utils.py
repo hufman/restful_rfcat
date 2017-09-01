@@ -20,7 +20,7 @@ class DeviceDriver(object):
 		return hideyhole.get(key)
 	def _set(self, key, value):
 		hideyhole.set(key, value)
-		pubsub.publish("", {'device':self, 'state':value})
+		pubsub.publish({'device':self, 'state':value})
 
 	def get_state(self):
 		raise NotImplementedError

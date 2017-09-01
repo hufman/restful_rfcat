@@ -26,9 +26,7 @@ class Pubsub():
 def subscribe(topic=""):
 	return Pubsub(topic)
 
-def publish(topic="", data=None):
-	if data is None:
-		raise ValueError("Empty data to publish")
+def publish(data, topic=""):
 	with queue_management_lock:
 		topic_subs = list(topic_subscribers[topic])
 	for sub in topic_subs:
