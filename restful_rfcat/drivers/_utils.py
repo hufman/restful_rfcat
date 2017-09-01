@@ -8,11 +8,11 @@ class DeviceDriver(object):
 		self.name = name
 		self.label = label
 
-	def get_class(self):
+	def get_class(self):	# pragma: no cover
 		raise NotImplementedError
 		return "light"
 
-	def get_available_states(self):
+	def get_available_states(self):	# pragma: no cover
 		raise NotImplementedError
 		return ["OFF", "1", "2", "3"]
 
@@ -22,9 +22,9 @@ class DeviceDriver(object):
 		hideyhole.set(key, value)
 		pubsub.publish({'device':self, 'state':value})
 
-	def get_state(self):
+	def get_state(self):	# pragma: no cover
 		raise NotImplementedError
-	def set_state(self, state):
+	def set_state(self, state):	# pragma: no cover
 		raise NotImplementedError
 
 class FakeDevice(DeviceDriver):
@@ -75,6 +75,11 @@ class PWMThreeSymbolMixin(object):
 		# sometimes the 0 bits get held a little longer
 		>>> PWMThreeSymbolMixin._decode_pwm_symbols("0010011001011")
 		'0101'
+
+		# invalid sequences return None
+		>>> PWMThreeSymbolMixin._decode_pwm_symbols("1111")
+		>>> PWMThreeSymbolMixin._decode_pwm_symbols("111101111")
+
 		"""
 		if len(symbols) < 6:
 			return None
