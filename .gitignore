@@ -3,3 +3,5 @@ localconfig.py
 .cache
 __pycache__
 venv
+.coverage
+*,cover
