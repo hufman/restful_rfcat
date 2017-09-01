@@ -28,6 +28,6 @@ def subscribe(topic=""):
 
 def publish(data, topic=""):
 	with queue_management_lock:
-		topic_subs = list(topic_subscribers[topic])
+		topic_subs = list(topic_subscribers.get(topic, []))
 	for sub in topic_subs:
 		sub.put_nowait(data)
