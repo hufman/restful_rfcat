@@ -21,10 +21,18 @@ class HideyHole(object):
 				return handle.read()
 		except:
 			return default
-default_instance = HideyHole('/tmp')
 
 def set(key, value):
-	return default_instance.set(key, value)
+	# deferred import to sidestep circular import
+	from restful_rfcat.config import PERSISTENCE
+	for driver in PERSISTENCE:
+		driver.set(key, value)
 
 def get(key):
-	return default_instance.get(key)
+	# deferred import to sidestep circular import
+	from restful_rfcat.config import PERSISTENCE
+	for driver in PERSISTENCE:
+		found_value = driver.get(key)
+		if found_value is not None:
+			return found_value
+	return None

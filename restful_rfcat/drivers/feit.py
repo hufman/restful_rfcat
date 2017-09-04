@@ -3,7 +3,7 @@ from operator import itemgetter
 import logging
 import struct
 import re
-from restful_rfcat import radio, hideyhole
+from restful_rfcat import radio
 from restful_rfcat.drivers._utils import DeviceDriver
 
 logger = logging.getLogger(__name__)

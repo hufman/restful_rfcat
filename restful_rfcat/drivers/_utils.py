@@ -1,5 +1,5 @@
 import re
-from restful_rfcat import hideyhole, pubsub
+from restful_rfcat import persistence, pubsub
 
 # Useful utilities or classes for drivers
 class DeviceDriver(object):
@@ -17,9 +17,9 @@ class DeviceDriver(object):
 		return ["OFF", "1", "2", "3"]
 
 	def _get(self, key):
-		return hideyhole.get(key)
+		return persistence.get(key)
 	def _set(self, key, value):
-		hideyhole.set(key, value)
+		persistence.set(key, value)
 		pubsub.publish({'device':self, 'state':value})
 
 	def get_state(self):	# pragma: no cover
