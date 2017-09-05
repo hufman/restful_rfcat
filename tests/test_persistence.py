@@ -52,7 +52,28 @@ class TestMQTT(unittest.TestCase):
 		call_args = self.mock.single.call_args
 		self.assertEqual(call_args[0][0], "lights/fan")
 		self.assertEqual(call_args[1]['payload'], "value")
-		self.mock.single.call_args(key="lights/fan", payload="value")
+
+	def test_prefix(self):
+		settings = {
+			"_publish": self.mock,
+			"prefix": "testname"
+		}
+		config.PERSISTENCE = [persistence.MQTT(**settings)]
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "testname/lights/fan")
+		self.assertEqual(call_args[1]['payload'], "value")
+
+	def test_prefix_slash(self):
+		settings = {
+			"_publish": self.mock,
+			"prefix": "/testname/"
+		}
+		config.PERSISTENCE = [persistence.MQTT(**settings)]
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "/testname/lights/fan")
+		self.assertEqual(call_args[1]['payload'], "value")
 
 	def test_failure(self):
 		# should swallow errors when setting
