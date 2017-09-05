@@ -10,6 +10,6 @@ PERSISTENCE = [
 ]
 
 try:
-    from restful_rfcat.localconfig import *
-except:
-    pass
+	from restful_rfcat.localconfig import *
+except Exception as e:
+	print("Error while loading localconfig: %s\nUsing default config" % (e,))
