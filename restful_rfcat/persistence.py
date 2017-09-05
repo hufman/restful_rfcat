@@ -67,6 +67,50 @@ class MQTT(object):
 		except Exception as e:
 			logger.warning("Failure to persist to MQTT: %s" % (e.message,))
 
+class Redis(object):
+	def __init__(self, hostname="localhost", port=6379, password=None, prefix=None, db=0, publish=True, client=None):
+		self.prefix = prefix
+		if self.prefix is not None:
+			self.prefix = self.prefix.rstrip('/')
+		self.db = db
+		self.publish = publish
+		if client is None:
+			import redis
+			self.client = redis.StrictRedis(host=hostname, port=port,
+				password=password, db=db,
+				socket_keepalive=60)
+		else:
+			# custom-connected or mock object
+			self.client = client
+
+	def _path(self, key):
+		if self.prefix is not None:
+			return self.prefix + '/' + key
+		return key
+
+	def get(self, key, default=None):
+		if self.db is not None:
+			found = None
+			try:
+				found = self.client.get(self._path(key))
+			except Exception as e:
+				logger.warning("Failure to load from Redis: %s" % (e.message,))
+			if found is not None:
+				return found
+		return default
+
+	def set(self, key, value):
+		if self.db is not None:
+			try:
+				self.client.set(self._path(key), value)
+			except Exception as e:
+				logger.warning("Failure to persist to Redis: %s" % (e.message,))
+		if self.publish:
+			try:
+				self.client.publish(self._path(key), value)
+			except Exception as e:
+				logger.warning("Failure to publish to Redis: %s" % (e.message,))
+
 def set(key, value):
 	# deferred import to sidestep circular import
 	from restful_rfcat.config import PERSISTENCE

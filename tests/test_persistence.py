@@ -80,3 +80,70 @@ class TestMQTT(unittest.TestCase):
 		import paho.mqtt
 		self.mock.single.side_effect = paho.mqtt.MQTTException("Failure")
 		persistence.set("lights/fan", "value")
+
+class TestRedis(unittest.TestCase):
+	def setUp(self):
+		self.mock = mock.Mock()
+		settings = {
+			"client": self.mock
+		}
+		config.PERSISTENCE = [persistence.Redis(**settings)]
+
+	def test_get(self):
+		self.mock.get.side_effect = lambda key:None
+		self.assertEqual(None, persistence.get("keyname"))
+		self.mock.get.assert_called_once_with("keyname")
+
+	def test_set(self):
+		persistence.set("lights/fan", "value")
+		self.mock.set.assert_called_once_with("lights/fan", "value")
+		self.mock.publish.assert_called_once_with("lights/fan", "value")
+
+	def test_set_no_publish(self):
+		settings = {
+			"client": self.mock,
+			"publish": False,
+		}
+		config.PERSISTENCE = [persistence.Redis(**settings)]
+		persistence.set("lights/fan", "value")
+		self.mock.set.assert_called_once_with("lights/fan", "value")
+		self.mock.publish.assert_not_called()
+
+	def test_set_only_publish(self):
+		settings = {
+			"client": self.mock,
+			"db": None,
+		}
+		config.PERSISTENCE = [persistence.Redis(**settings)]
+		persistence.set("lights/fan", "value")
+		self.assertEqual(None, persistence.get("lights/fan"))
+		self.mock.set.assert_not_called()
+		self.mock.get.assert_not_called()
+		self.mock.publish.assert_called_once_with("lights/fan", "value")
+
+	def test_prefix(self):
+		settings = {
+			"client": self.mock,
+			"prefix": "testname"
+		}
+		config.PERSISTENCE = [persistence.Redis(**settings)]
+		persistence.set("lights/fan", "value")
+		self.mock.set.assert_called_once_with("testname/lights/fan", "value")
+		self.mock.publish.assert_called_once_with("testname/lights/fan", "value")
+
+	def test_prefix_slash(self):
+		settings = {
+			"client": self.mock,
+			"prefix": "/testname/"
+		}
+		config.PERSISTENCE = [persistence.Redis(**settings)]
+		persistence.set("lights/fan", "value")
+		self.mock.set.assert_called_once_with("/testname/lights/fan", "value")
+		self.mock.publish.assert_called_once_with("/testname/lights/fan", "value")
+
+	def test_failure(self):
+		# should swallow errors when setting
+		self.mock.get.side_effect = IOError("Failure")
+		self.mock.set.side_effect = IOError("Failure")
+		persistence.get("lights/fan")
+		persistence.set("lights/fan", "value")
