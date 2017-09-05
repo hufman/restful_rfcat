@@ -1,4 +1,5 @@
 from restful_rfcat import config, persistence
+import mock
 import os
 import shutil
 import tempfile
@@ -34,3 +35,27 @@ class TestHideyHole(unittest.TestCase):
 		persistence.set(key, data)
 		dir_contents = os.listdir(self._dirname)
 		self.assertEqual(set([key]), set(dir_contents))
+
+class TestMQTT(unittest.TestCase):
+	def setUp(self):
+		self.mock = mock.Mock()
+		settings = {
+			"_publish": self.mock
+		}
+		config.PERSISTENCE = [persistence.MQTT(**settings)]
+
+	def test_get(self):
+		self.assertEqual(None, persistence.get("keyname"))
+
+	def test_set(self):
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "lights/fan")
+		self.assertEqual(call_args[1]['payload'], "value")
+		self.mock.single.call_args(key="lights/fan", payload="value")
+
+	def test_failure(self):
+		# should swallow errors when setting
+		import paho.mqtt
+		self.mock.single.side_effect = paho.mqtt.MQTTException("Failure")
+		persistence.set("lights/fan", "value")
