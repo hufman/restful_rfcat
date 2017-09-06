@@ -64,7 +64,7 @@ for device in DEVICES:
 @bottle.get('/')
 def index():
 	page = markup.page()
-	page.init(script=['app.js'])
+	page.init(script=['app.js'], css=['style.css'])
 	for klass in sorted(device_list.keys()):
 		klass_devices = device_list[klass]
 		page.h2(klass)
@@ -76,13 +76,17 @@ def index():
 				state = "Unknown"
 			page.li.open()
 			page.span("%s - " % (path,))
-			page.span(state, id='%s-state'%(path,))
+			page.span(state, id='%s-state'%(path,), class_='state')
 			page.li.close()
 	return str(page)
 
 @bottle.get('/app.js')
 def appjs():
 	return bottle.static_file('app.js', root=script_path)
+
+@bottle.get('/style.css')
+def stylecss():
+	return bottle.static_file('style.css', root=script_path)
 
 @bottle.get('/stream')
 def stream():
