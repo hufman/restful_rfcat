@@ -98,20 +98,27 @@ class OOKRadio(Radio):
 				self._change_mode('send')
 				Radio.device.RFxmit(bytes, repeat=repeat)
 			except rflib.chipcon_usb.ChipconUsbTimeoutException:
-				logger.warning("USB Timeout")
+				logger.warning("USB Timeout while sending")
 				self.reset_device()
 				raise Exception("RFCat failure")
 
 	def receive(self):
-		with Radio.lock:
-			self._change_mode('receive')
+		acquired = Radio.lock.acquire(False)
+		data = None
+		timestamp = None
+		if acquired:
 			try:
-				(data, time) = Radio.device.RFrecv(blocksize=50)
+				self._change_mode('receive')
+				(data, timestamp) = Radio.device.RFrecv(blocksize=30)
 			except rflib.chipcon_usb.ChipconUsbTimeoutException:
-				logger.warning("USB Timeout")
+				logger.warning("USB Timeout while receiving")
 				self.reset_device()
-				return (None, None)
-		return (data, time)
+			finally:
+				Radio.lock.release()
+		else:
+			# sending something, wait a bit
+			time.sleep(3)
+		return (data, timestamp)
 
 	def receive_packets(self, gap=20):
 		(data, time) = self.receive()
