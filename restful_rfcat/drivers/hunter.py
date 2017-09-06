@@ -1,8 +1,9 @@
 # A device driver to interact with Hunter ceiling fans
 from operator import itemgetter
 import logging
-import struct
 import re
+import struct
+import time
 from restful_rfcat import radio
 from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin
 
@@ -134,6 +135,7 @@ class HunterCeilingFan(HunterCeiling):
 
 class HunterCeilingLight(HunterCeiling):
 	CLASS = 'lights'
+	last_set = 0
 
 	def get_available_states(self):
 		return ["OFF", "ON"]
@@ -141,6 +143,14 @@ class HunterCeilingLight(HunterCeiling):
 	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
+		if time.time() < self.last_set + 5 and \
+		   self._get() == state:
+			# debounce duplicate light settings for 5 seconds
+			# in case something was slow and the user clicked twice
+			# very important with Hunter because it's a toggle light
+			logger.info("Ignoring quickly-repeated light command")
+			return self._get()
+		self.last_set = time.time()
 		repeat = None
 		if state == "ON" and self._get() == "ON":
 			logger.info("%s light should already be on, forcing on" % (self.name,))
