@@ -18,6 +18,19 @@ Configuration
 
 The main purpose of `config.py` is to populate a list of `DEVICES` with objects from `drivers.py`. The object constructor will take parameters specific to the device, like an address code of some sort, as well as a name for URL resources and label for display.
 
+There is also an option to run an EAVESDROPPER thread in the background, which takes over the radio when idle and listens for radio transmissions, updating device state accordingly.
+
+Device state is persisted to a configurable set of locations, such as a simple file or Redis. An MQTT adapter is provided for integration with home automation systems.
+
+Supported Devices
+-----------------
+
+The following remote-controlled devices have been successfully tested, similar devices of the same brand may also work.
+
+- Hunter Universal 3 Speed Ceiling Fan Model 99600  [FCC ID](https://fccid.io/IN2TX28)
+- Hampton Bay Windward IV 52-WWDIV  [FCC ID](https://fccid.io/RGB-52WWDIVS)
+- Feit Electric String Lights  [FCC ID](https://fccid.io/2AIH2RF20160226B)
+
 Development
 -----------
 
