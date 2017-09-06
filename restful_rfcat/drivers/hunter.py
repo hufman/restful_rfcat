@@ -163,7 +163,10 @@ class HunterCeilingEavesdropper(HunterCeiling):
 	radio = radio.OOKRadioChannelHack(347999900, 5280, 2.1, 250000)
 	def __init__(self):
 		# don't register as a device with the regular super constractor
+		# which packets we saw
 		self.packets_seen = {}
+		# how long ago we saw a packet
+		self.packet_last_seen = 9
 
 	@staticmethod
 	def _decode_pwm_symbols(symbols):
@@ -253,21 +256,21 @@ class HunterCeilingEavesdropper(HunterCeiling):
 				found_device._set(state)
 
 	def eavesdrop(self):
-		saw_packet = False
 		packets = self.radio.receive_packets(20)
 		if packets is None:
 			# error, try again next time
 			return None
 		# try to parse each packet, skipping the clock bit at the start
+		self.packet_last_seen = min(9, self.packet_last_seen + 1)
 		logical_packets = [self._decode_pwm_symbols(p) for p in packets]
 		for p in logical_packets:
 			if not self.validate_packet(p):
 				continue
 			count = self.packets_seen.get(p, 0)
 			self.packets_seen[p] = count + 1
-			saw_packet = True
+			self.packet_last_seen = 0
 
-		if not saw_packet:
+		if self.packet_last_seen > 3:
 			if len(self.packets_seen) > 0:
 				# end of an existing transmission
 				key, count = max(self.packets_seen.items(), key=itemgetter(1))
