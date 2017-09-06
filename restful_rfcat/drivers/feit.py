@@ -99,7 +99,7 @@ class FeitElectric(DeviceDriver):
 	def get_class(self):
 		"""
 		>>> FeitElectricLights(name='test', label='Test', address='0000').get_class()
-		'light'
+		'lights'
 		"""
 		return self.CLASS
 
@@ -117,7 +117,7 @@ class FeitElectric(DeviceDriver):
 		return self._get()
 
 class FeitElectricLights(FeitElectric):
-	CLASS = 'light'
+	CLASS = 'lights'
 
 	def subdevices(self):
 		return {'color': FeitElectricLightsColor(name=self.name, label=self.label, address=self.address)}
@@ -135,7 +135,7 @@ class FeitElectricLights(FeitElectric):
 		return state
 
 class FeitElectricLightsColor(FeitElectric):
-	CLASS = 'light'
+	CLASS = 'lights'
 	COLORS = ["RED", "GREEN", "BLUE", "WHITE"]
 
 	def _state_path(self):

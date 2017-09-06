@@ -38,7 +38,7 @@ def rest_list_states(device):
 def device_path(device):
 	klass = device.get_class()
 	name = device.name
-	path = '/%s/%s' % (klass+'s', name)
+	path = '/%s/%s' % (klass, name)
 	return path
 for device in DEVICES:
 	path = device_path(device)

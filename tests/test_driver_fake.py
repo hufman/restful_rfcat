@@ -17,9 +17,9 @@ class TestDriverFake(unittest.TestCase):
 
 	def test_class(self):
 		fan = drivers.FakeFan(name="test", label="Test")
-		self.assertEqual('fan', fan.get_class())
+		self.assertEqual('fans', fan.get_class())
 		light = drivers.FakeLight(name="test", label="Test")
-		self.assertEqual('light', light.get_class())
+		self.assertEqual('lights', light.get_class())
 
 	def test_state(self):
 		light = drivers.FakeLight(name="test", label="Test")

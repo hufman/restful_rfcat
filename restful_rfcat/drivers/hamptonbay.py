@@ -81,9 +81,9 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 	def get_class(self):
 		"""
 		>>> HamptonCeilingFan(name='test', label='Test', dip_switch='0000').get_class()
-		'fan'
+		'fans'
 		>>> HamptonCeilingLight(name='test', label='Test', dip_switch='0000').get_class()
-		'light'
+		'lights'
 		"""
 		return self.CLASS
 
@@ -115,7 +115,7 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		return self._get()
 
 class HamptonCeilingFan(HamptonCeiling):
-	CLASS = 'fan'
+	CLASS = 'fans'
 
 	def get_available_states(self):
 		return ["OFF", "0", "1", "2", "3"]
@@ -144,7 +144,7 @@ class HamptonCeilingFan(HamptonCeiling):
 		return state
 
 class HamptonCeilingLight(HamptonCeiling):
-	CLASS = 'light'
+	CLASS = 'lights'
 
 	def get_available_states(self):
 		return ["OFF", "ON"]

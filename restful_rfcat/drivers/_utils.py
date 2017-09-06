@@ -10,7 +10,7 @@ class DeviceDriver(object):
 
 	def get_class(self):	# pragma: no cover
 		raise NotImplementedError
-		return "light"
+		return "lights"
 
 	def get_available_states(self):	# pragma: no cover
 		raise NotImplementedError
@@ -36,12 +36,12 @@ class FakeDevice(DeviceDriver):
 		return self._set("%s/%s" % (self.CLASS, self.name), state)
 
 class FakeLight(FakeDevice):
-	CLASS = "light"
+	CLASS = "lights"
 	def get_available_states(self):
 		return ["OFF", "ON"]
 
 class FakeFan(FakeDevice):
-	CLASS = "fan"
+	CLASS = "fans"
 	def get_available_states(self):
 		return ["OFF", "LOW", "MED", "HI"]
 

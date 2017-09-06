@@ -75,9 +75,9 @@ class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 	def get_class(self):
 		"""
 		>>> HunterCeilingFan(name='test', label='Test', dip_switch='0000').get_class()
-		'fan'
+		'fans'
 		>>> HunterCeilingLight(name='test', label='Test', dip_switch='0000').get_class()
-		'light'
+		'lights'
 		"""
 		return self.CLASS
 
@@ -92,7 +92,7 @@ class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		return self._get()
 
 class HunterCeilingFan(HunterCeiling):
-	CLASS = 'fan'
+	CLASS = 'fans'
 
 	def get_available_states(self):
 		return ["OFF", "0", "1", "2", "3"]
@@ -133,7 +133,7 @@ class HunterCeilingFan(HunterCeiling):
 		return state
 
 class HunterCeilingLight(HunterCeiling):
-	CLASS = 'light'
+	CLASS = 'lights'
 
 	def get_available_states(self):
 		return ["OFF", "ON"]
