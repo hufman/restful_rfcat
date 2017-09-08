@@ -47,24 +47,35 @@ class MQTT(object):
 			self._publish = _publish
 		self._test_connect()
 
-	def _test_connect(self):
-		self._publish.single('restful_rfcat', payload=None,
+	def _publish_multiple(self, msgs):
+		if len(msgs) > 0:
+			self._publish.multiple(msgs,
+				hostname=self.hostname, port=self.port,
+				auth=self.auth, tls=self.tls
+			)
+
+	def _publish_single(self, topic, payload):
+		self._publish.single(topic, payload=payload, retain=self.retain,
 			hostname=self.hostname, port=self.port,
 			auth=self.auth, tls=self.tls
 		)
 
+	def _test_connect(self):
+		self._publish_single('restful_rfcat', payload=None)
+
 	def get(self, key, default=None):
 		return default
 
-	def set(self, key, value):
-		path = key
+	def _set_topic(self, key):
+		topic = key
 		if self.prefix is not None:
-			path = self.prefix + '/' + key
+			topic = self.prefix + '/' + key
+		return topic
+
+	def set(self, key, value):
 		try:
-			self._publish.single(path, payload=value, retain=self.retain,
-				hostname=self.hostname, port=self.port,
-				auth=self.auth, tls=self.tls
-			)
+			topic = self._set_topic(key)
+			self._publish_single(topic, payload=value)
 		except Exception as e:
 			logger.warning("Failure to persist to MQTT: %s" % (e.message,))
 
