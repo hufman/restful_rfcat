@@ -64,7 +64,7 @@ class FeitElectric(DeviceDriver):
 	def _encode(bin_key):
 		"""
 		>>> FeitElectric._encode("01100110")
-		'\\x00\\x00\\x00(('
+		'\\x00\\x00(('
 		"""
 		pwm_str_key = FeitElectric._encode_pwm(bin_key)
 		pwm_str_key = "" + pwm_str_key #added leading 0 for clock
@@ -76,7 +76,7 @@ class FeitElectric(DeviceDriver):
 			key_packed = struct.pack(">Q", dec_pwm_key & (2**64-1)) + key_packed
 			dec_pwm_key = dec_pwm_key >> 64
 		# trim to the correct amount of white space
-		key_packed = '\0\0\0' + key_packed.strip('\0')
+		key_packed = '\0\0' + key_packed.strip('\0')
 		return key_packed
 
 	@classmethod
