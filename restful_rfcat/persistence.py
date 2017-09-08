@@ -1,3 +1,4 @@
+import json
 import logging
 import os.path
 
@@ -78,6 +79,72 @@ class MQTT(object):
 			self._publish_single(topic, payload=value)
 		except Exception as e:
 			logger.warning("Failure to persist to MQTT: %s" % (e.message,))
+
+class MQTTHomeAssistant(MQTT):
+	""" A variant of MQTT publishing that supports HomeAssistant's discovery protocol
+	"""
+	def __init__(self, hostname="localhost", port=1883, username=None, password=None, tls=None, retain=True, discovery_prefix="homeassistant", discovery_devices=[], _publish=None):
+		super(MQTTHomeAssistant, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, _publish=_publish)
+		self.discovery_prefix = discovery_prefix
+		if len(discovery_devices) > 0:
+			self.initial_announcement(discovery_prefix, discovery_devices)
+
+	def initial_announcement(self, discovery_prefix="homeassistant", discovery_devices=[]):
+		announcements = []
+		for device in discovery_devices:
+			klass = device.get_class()
+			name = device.name
+			key = '%s/%s' % (klass, name)
+			topic = self._hass_topic(key)
+			config_topic = '%s/config' % (topic,)
+			state_topic = '%s/state' % (topic,)
+			command_topic = '%s/set' % (topic,)
+			config = {
+				'name': device.label,
+				'state_topic': state_topic,
+				'command_topic': command_topic,
+			}
+			announcement = {
+				'topic': config_topic,
+				'payload': json.dumps(config),
+				'retain': self.retain,
+			}
+			announcements.append(announcement)
+		self._publish_multiple(announcements)
+
+	@staticmethod
+	def _device_component(klass):
+		""" Transform a device class into a HomeAssistant component
+
+		>>> MQTTHomeAssistant._device_component('lights')
+		'light'
+		>>> MQTTHomeAssistant._device_component('fans')
+		'fan'
+		>>> MQTTHomeAssistant._device_component('switch')
+		'switch'
+		"""
+		component = klass[:-1] if klass.endswith('s') else klass
+		return component
+
+	def _hass_topic(self, key):
+		""" Transform a device persistence path to an mqtt topic
+		Include the device class into the object_id, which needs to be unique
+
+		>>> import mock
+		>>> MQTTHomeAssistant(_publish=mock.Mock())._hass_topic('lights/fake')
+		'homeassistant/light/lights_fake'
+		>>> MQTTHomeAssistant(_publish=mock.Mock())._hass_topic('lights/fake/color')
+		'homeassistant/light/lights_fake_color'
+		>>> MQTTHomeAssistant(_publish=mock.Mock())._hass_topic('fans/fake')
+		'homeassistant/fan/fans_fake'
+		"""
+		klass = key.split('/')[0]
+		component = self._device_component(klass)
+		object_id = key.replace('/', '_')
+		return '%s/%s/%s' % (self.discovery_prefix, component, object_id)
+
+	def _set_topic(self, key):
+		return self._hass_topic(key) + '/state'
 
 class Redis(object):
 	def __init__(self, hostname="localhost", port=6379, password=None, prefix=None, db=0, publish=True, client=None):

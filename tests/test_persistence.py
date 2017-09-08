@@ -1,4 +1,5 @@
-from restful_rfcat import config, persistence
+from restful_rfcat import config, drivers, persistence
+import json
 import mock
 import os
 import shutil
@@ -94,6 +95,94 @@ class TestMQTT(unittest.TestCase):
 		persistence.set("lights/fan", "value")
 		call_args = self.mock.single.call_args
 		self.assertEqual(call_args[0][0], "/testname/lights/fan")
+		self.assertEqual(call_args[1]['payload'], "value")
+
+	def test_failure(self):
+		# should swallow errors when setting
+		import paho.mqtt
+		self.mock.single.side_effect = paho.mqtt.MQTTException("Failure")
+		persistence.set("lights/fan", "value")
+
+class TestMQTTHomeAssistant(unittest.TestCase):
+	def setUp(self):
+		self.mock = mock.Mock()
+		settings = {
+			"_publish": self.mock
+		}
+		config.PERSISTENCE = [persistence.MQTTHomeAssistant(**settings)]
+
+	def test_discovery_empty(self):
+		self.mock.multiple.assert_not_called()
+
+	def test_discovery(self):
+		device_settings = {
+			"name": "fake",
+			"label": "Fake Device"
+		}
+		settings = {
+			"_publish": self.mock,
+			"discovery_devices": [
+				drivers.FakeFan(**device_settings),
+				drivers.FakeLight(**device_settings)
+			]
+		}
+		config.PERSISTENCE = [persistence.MQTTHomeAssistant(**settings)]
+		msgs = self.mock.multiple.call_args[0][0]
+		self.assertEqual(2, len(msgs))	# two devices were announced
+		self.assertEqual('homeassistant/fan/fans_fake/config', msgs[0]['topic'])
+		self.assertEqual('homeassistant/light/lights_fake/config', msgs[1]['topic'])
+		fan = json.loads(msgs[0]['payload'])
+		desired_fan = {
+			'name': 'Fake Device',
+			'state_topic': 'homeassistant/fan/fans_fake/state',
+			'command_topic': 'homeassistant/fan/fans_fake/set',
+		}
+		self.assertEqual(desired_fan, fan)
+
+	def test_discovery_custom_prefix(self):
+		device_settings = {
+			"name": "fake",
+			"label": "Fake Device"
+		}
+		settings = {
+			"_publish": self.mock,
+			"discovery_prefix": "myhass",
+			"discovery_devices": [
+				drivers.FakeFan(**device_settings),
+				drivers.FakeLight(**device_settings)
+			]
+		}
+		config.PERSISTENCE = [persistence.MQTTHomeAssistant(**settings)]
+		msgs = self.mock.multiple.call_args[0][0]
+		self.assertEqual(2, len(msgs))	# two devices were announced
+		self.assertEqual('myhass/fan/fans_fake/config', msgs[0]['topic'])
+		self.assertEqual('myhass/light/lights_fake/config', msgs[1]['topic'])
+		fan = json.loads(msgs[0]['payload'])
+		desired_fan = {
+			'name': 'Fake Device',
+			'state_topic': 'myhass/fan/fans_fake/state',
+			'command_topic': 'myhass/fan/fans_fake/set',
+		}
+		self.assertEqual(desired_fan, fan)
+
+	def test_get(self):
+		self.assertEqual(None, persistence.get("keyname"))
+
+	def test_set(self):
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "homeassistant/light/lights_fan/state")
+		self.assertEqual(call_args[1]['payload'], "value")
+
+	def test_set_custom_prefix(self):
+		settings = {
+			"_publish": self.mock,
+			"discovery_prefix": "myhass",
+		}
+		config.PERSISTENCE = [persistence.MQTTHomeAssistant(**settings)]
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "myhass/light/lights_fan/state")
 		self.assertEqual(call_args[1]['payload'], "value")
 
 	def test_failure(self):
