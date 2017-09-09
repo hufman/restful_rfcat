@@ -64,6 +64,27 @@ class TestMQTT(unittest.TestCase):
 		self.assertEqual(call_args[0][0], "testname/lights/fan")
 		self.assertEqual(call_args[1]['payload'], "value")
 
+	def test_retain_default_true(self):
+		settings = {
+			"_publish": self.mock,
+		}
+		config.PERSISTENCE = [persistence.MQTT(**settings)]
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "lights/fan")
+		self.assertEqual(call_args[1]['retain'], True)
+
+	def test_retain_false(self):
+		settings = {
+			"_publish": self.mock,
+			"retain": False
+		}
+		config.PERSISTENCE = [persistence.MQTT(**settings)]
+		persistence.set("lights/fan", "value")
+		call_args = self.mock.single.call_args
+		self.assertEqual(call_args[0][0], "lights/fan")
+		self.assertEqual(call_args[1]['retain'], False)
+
 	def test_prefix_slash(self):
 		settings = {
 			"_publish": self.mock,

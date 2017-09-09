@@ -26,13 +26,14 @@ class HideyHole(object):
 			return default
 
 class MQTT(object):
-	def __init__(self, hostname="localhost", port=1883, prefix=None, username=None, password=None, tls=None, _publish=None):
+	def __init__(self, hostname="localhost", port=1883, prefix=None, retain=True, username=None, password=None, tls=None, _publish=None):
 		# save settings for later publishing
 		self.hostname = hostname
 		self.port = port
 		self.prefix = prefix
 		if self.prefix is not None:
 			self.prefix = self.prefix.rstrip('/')
+		self.retain = retain
 		self.auth = None
 		if username is not None:
 			self.auth = {'username': username, 'password': password}
@@ -60,7 +61,7 @@ class MQTT(object):
 		if self.prefix is not None:
 			path = self.prefix + '/' + key
 		try:
-			self._publish.single(path, payload=value,
+			self._publish.single(path, payload=value, retain=self.retain,
 				hostname=self.hostname, port=self.port,
 				auth=self.auth, tls=self.tls
 			)
