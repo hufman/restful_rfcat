@@ -112,8 +112,11 @@ class FeitElectricLights(FeitElectric):
 	def subdevices(self):
 		return {'color': FeitElectricLightsColor(name=self.name, label=self.label, address=self.address)}
 
-	def get_available_states(self):
+	def get_acceptable_states(self):
 		return ["OFF", "ON"] + FeitElectricLightsColor.COLORS
+
+	def get_available_states(self):
+		return ["OFF", "ON"]
 
 	def set_state(self, state):
 		if state in FeitElectricLightsColor.COLORS:

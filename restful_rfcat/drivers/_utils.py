@@ -18,8 +18,7 @@ class DeviceDriver(object):
 		""" Get all states accepted by the device, including synonyms
 		    Used mainly for api documentation
 		"""
-		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
-		return ["OFF", "1", "L", "LO", "LOW", "MID", "HI"]
+		return self.get_available_states()
 
 	def get_available_states(self):	# pragma: no cover
 		""" Get the main states accepted by the device, without synonyms """
