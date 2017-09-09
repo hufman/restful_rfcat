@@ -29,10 +29,10 @@ def rest_set_state(device):
 	_wrapped.__name__ = 'put_%s' % (device.name,)
 	return _wrapped
 def rest_list_states(device):
-	""" Inside an HTTP PUT, set a device's state """
+	""" Inside an HTTP OPTIONS, list a device's acceptable inputs """
 	def _wrapped(*args, **kwargs):
 		bottle.response.content_type = 'text/plain'
-		return '\n'.join(device.get_available_states())
+		return '\n'.join(device.get_acceptable_states())
 	_wrapped.__name__ = 'put_%s' % (device.name,)
 	return _wrapped
 def device_path(device):
