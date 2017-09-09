@@ -10,14 +10,24 @@ class DeviceDriver(object):
 		self.label = label
 
 	def get_class(self):	# pragma: no cover
+		""" Get the namespace in the api to place this device """
 		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
 		return "lights"
 
-	def get_available_states(self):	# pragma: no cover
+	def get_acceptable_states(self):	# pragma: no cover
+		""" Get all states accepted by the device, including synonyms
+		    Used mainly for api documentation
+		"""
 		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
-		return ["OFF", "1", "2", "3"]
+		return ["OFF", "1", "L", "LO", "LOW", "MID", "HI"]
+
+	def get_available_states(self):	# pragma: no cover
+		""" Get the main states accepted by the device, without synonyms """
+		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
+		return ["OFF", "LO", "MID", "HI"]
 
 	def _state_path(self):
+		""" Where to save the device in persistence layers """
 		return '%s/%s' % (self.get_class(), self.name)
 
 	def _get(self):
@@ -143,12 +153,19 @@ class ThreeSpeedFanMixin(object):
 		except KeyError:
 			raise ValueError(state)
 
-	def get_available_states(self):
+	def get_acceptable_states(self):
 		"""
-		>>> sorted(ThreeSpeedFanMixin().get_available_states())
+		>>> ThreeSpeedFanMixin().get_acceptable_states()
 		['0', '1', '2', '3', 'H', 'HI', 'HIGH', 'L', 'LO', 'LOW', 'M', 'MED', 'MID', 'O', 'OFF']
 		"""
-		return self.STATE_COMMANDS.keys()
+		return sorted(self.STATE_COMMANDS.keys())
+
+	def get_available_states(self):
+		"""
+		>>> ThreeSpeedFanMixin().get_available_states()
+		['0', '1', '2', '3']
+		"""
+		return sorted(list(set(self.STATE_COMMANDS.values())))
 
 class LightMixin(object):
 	CLASS = 'lights'
@@ -182,9 +199,16 @@ class LightMixin(object):
 		"""
 		return self.CLASS
 
-	def get_available_states(self):
+	def get_acceptable_states(self):
 		"""
-		>>> sorted(LightMixin().get_available_states())
+		>>> LightMixin().get_acceptable_states()
 		['0', '1', 'OFF', 'ON']
 		"""
-		return self.STATE_COMMANDS.keys()
+		return sorted(self.STATE_COMMANDS.keys())
+
+	def get_available_states(self):
+		"""
+		>>> LightMixin().get_available_states()
+		['OFF', 'ON']
+		"""
+		return sorted(list(set(self.STATE_COMMANDS.values())))
