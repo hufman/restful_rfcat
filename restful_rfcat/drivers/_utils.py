@@ -103,25 +103,88 @@ class PWMThreeSymbolMixin(object):
 class ThreeSpeedFanMixin(object):
 	CLASS = 'fans'
 
+	STATE_COMMANDS = {
+		'0': '0',
+		'1': '1',
+		'2': '2',
+		'3': '3',
+		'O': '0',
+		'OFF': '0',
+		'L': '1',
+		'LO': '1',
+		'LOW': '1',
+		'M': '2',
+		'MED': '2',
+		'MID': '2',
+		'H': '3',
+		'HI': '3',
+		'HIGH': '3',
+	}
+
 	def get_class(self):
 		"""
 		>>> ThreeSpeedFanMixin().get_class()
 		'fans'
 		"""
-		return ThreeSpeedFanMixin.CLASS
+		return self.CLASS
+
+	@classmethod
+	def _state_to_command(klass, state):
+		"""
+		>>> ThreeSpeedFanMixin()._state_to_command('MED')
+		'fan2'
+		>>> ThreeSpeedFanMixin()._state_to_command('BLUE')
+		Traceback (most recent call last):
+		    ...
+		ValueError: BLUE
+		"""
+		try:
+			return 'fan' + klass.STATE_COMMANDS[state.upper()]
+		except KeyError:
+			raise ValueError(state)
 
 	def get_available_states(self):
-		return ["OFF", "0", "1", "2", "3"]
+		"""
+		>>> sorted(ThreeSpeedFanMixin().get_available_states())
+		['0', '1', '2', '3', 'H', 'HI', 'HIGH', 'L', 'LO', 'LOW', 'M', 'MED', 'MID', 'O', 'OFF']
+		"""
+		return self.STATE_COMMANDS.keys()
 
 class LightMixin(object):
 	CLASS = 'lights'
+
+	STATE_COMMANDS = {
+		'ON': 'ON',
+		'OFF': 'OFF',
+		'1': 'ON',
+		'0': 'OFF',
+	}
+
+	@classmethod
+	def _state_to_command(klass, state):
+		"""
+		>>> LightMixin()._state_to_command('OFF')
+		'OFF'
+		>>> LightMixin()._state_to_command('BLUE')
+		Traceback (most recent call last):
+		    ...
+		ValueError: BLUE
+		"""
+		try:
+			return klass.STATE_COMMANDS[state.upper()]
+		except KeyError:
+			raise ValueError(state)
 
 	def get_class(self):
 		"""
 		>>> LightMixin().get_class()
 		'lights'
 		"""
-		return LightMixin.CLASS
+		return self.CLASS
 
 	def get_available_states(self):
-		return ["OFF", "ON"]
+		"""
+		>>> sorted(LightMixin().get_available_states())
+		['0', '1', 'OFF', 'ON']
+		"""
+		return self.STATE_COMMANDS.keys()

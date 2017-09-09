@@ -74,38 +74,11 @@ class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		return bin_key
 
 class HunterCeilingFan(ThreeSpeedFanMixin, HunterCeiling):
-	@staticmethod
-	def _state_to_command(state):
-		"""
-		>>> HunterCeilingFan._state_to_command('1')
-		'fan1'
-		>>> HunterCeilingFan._state_to_command('0')
-		'fan0'
-		>>> HunterCeilingFan._state_to_command('OFF')
-		'fan0'
-		"""
-		command = 'fan%s' % (state,)
-		if state == 'OFF':
-			command = 'fan0'
-		return command
-	@staticmethod
-	def _normalize_state(state):
-		"""
-		>>> HunterCeilingFan._normalize_state('1')
-		'1'
-		>>> HunterCeilingFan._normalize_state('0')
-		'OFF'
-		"""
-		if state == '0':
-			state = 'OFF'
-		return state
-
 	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
 		command = self._state_to_command(state)
 		self._send_command(command)
-		state = self._normalize_state(state)
 		self._set(state)
 		return state
 
@@ -113,6 +86,10 @@ class HunterCeilingLight(LightMixin, HunterCeiling):
 	last_set = 0
 
 	def set_state(self, state):
+		""" Hunter ceiling lights don't have an idempotent ON/OFF
+		    so we just always send the toggle command, and save the
+		    user's intended state, assuming the user knows what he wants changed
+		"""
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
 		if time.time() < self.last_set + 5 and \

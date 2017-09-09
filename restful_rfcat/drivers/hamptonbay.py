@@ -96,21 +96,6 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		self._send_command(command)
 
 class HamptonCeilingFan(ThreeSpeedFanMixin, HamptonCeiling):
-	@staticmethod
-	def _state_to_command(state):
-		"""
-		>>> HamptonCeilingFan._state_to_command('1')
-		'1'
-		>>> HamptonCeilingFan._state_to_command('0')
-		'0'
-		>>> HamptonCeilingFan._state_to_command('OFF')
-		'0'
-		"""
-		command = '%s' % (state,)
-		if state == 'OFF':
-			command = '0'
-		return command
-
 	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
@@ -123,6 +108,7 @@ class HamptonCeilingLight(LightMixin, HamptonCeiling):
 	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
-		super(HamptonCeilingLight, self).set_state_combined(light=state.lower(), fan=None)
+		command = self._state_to_command(state)
+		super(HamptonCeilingLight, self).set_state_combined(light=command.lower(), fan=None)
 		self._set(state)
 		return state
