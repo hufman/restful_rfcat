@@ -5,7 +5,7 @@ import re
 import struct
 import time
 from restful_rfcat import radio
-from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin
+from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin, ThreeSpeedFanMixin, LightMixin
 
 logger = logging.getLogger(__name__)
 
@@ -73,21 +73,7 @@ class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		bin_key = '0%s111%s' % (self.dip_switch[::-1], self.commands[command])
 		return bin_key
 
-	def get_class(self):
-		"""
-		>>> HunterCeilingFan(name='test', label='Test', dip_switch='0000').get_class()
-		'fans'
-		>>> HunterCeilingLight(name='test', label='Test', dip_switch='0000').get_class()
-		'lights'
-		"""
-		return self.CLASS
-
-class HunterCeilingFan(HunterCeiling):
-	CLASS = 'fans'
-
-	def get_available_states(self):
-		return ["OFF", "0", "1", "2", "3"]
-
+class HunterCeilingFan(ThreeSpeedFanMixin, HunterCeiling):
 	@staticmethod
 	def _state_to_command(state):
 		"""
@@ -123,12 +109,8 @@ class HunterCeilingFan(HunterCeiling):
 		self._set(state)
 		return state
 
-class HunterCeilingLight(HunterCeiling):
-	CLASS = 'lights'
+class HunterCeilingLight(LightMixin, HunterCeiling):
 	last_set = 0
-
-	def get_available_states(self):
-		return ["OFF", "ON"]
 
 	def set_state(self, state):
 		if state not in self.get_available_states():

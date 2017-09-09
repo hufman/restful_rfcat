@@ -4,7 +4,7 @@ import logging
 import struct
 import re
 from restful_rfcat import radio
-from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin
+from restful_rfcat.drivers._utils import DeviceDriver, PWMThreeSymbolMixin, ThreeSpeedFanMixin, LightMixin
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +78,6 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		bin_key = bin_key + '0'*22
 		return bin_key
 
-	def get_class(self):
-		"""
-		>>> HamptonCeilingFan(name='test', label='Test', dip_switch='0000').get_class()
-		'fans'
-		>>> HamptonCeilingLight(name='test', label='Test', dip_switch='0000').get_class()
-		'lights'
-		"""
-		return self.CLASS
-
 	def set_state_combined(self, light=None, fan=None):
 		""" light should be on or off
 		    fan should be 0,1,2,3
@@ -104,12 +95,7 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		command = light_command + fan_command
 		self._send_command(command)
 
-class HamptonCeilingFan(HamptonCeiling):
-	CLASS = 'fans'
-
-	def get_available_states(self):
-		return ["OFF", "0", "1", "2", "3"]
-
+class HamptonCeilingFan(ThreeSpeedFanMixin, HamptonCeiling):
 	@staticmethod
 	def _state_to_command(state):
 		"""
@@ -133,12 +119,7 @@ class HamptonCeilingFan(HamptonCeiling):
 		self._set(state)
 		return state
 
-class HamptonCeilingLight(HamptonCeiling):
-	CLASS = 'lights'
-
-	def get_available_states(self):
-		return ["OFF", "ON"]
-
+class HamptonCeilingLight(LightMixin, HamptonCeiling):
 	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))

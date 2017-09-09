@@ -100,3 +100,28 @@ class PWMThreeSymbolMixin(object):
 				return None
 		return ''.join(bits)
 
+class ThreeSpeedFanMixin(object):
+	CLASS = 'fans'
+
+	def get_class(self):
+		"""
+		>>> ThreeSpeedFanMixin().get_class()
+		'fans'
+		"""
+		return ThreeSpeedFanMixin.CLASS
+
+	def get_available_states(self):
+		return ["OFF", "0", "1", "2", "3"]
+
+class LightMixin(object):
+	CLASS = 'lights'
+
+	def get_class(self):
+		"""
+		>>> LightMixin().get_class()
+		'lights'
+		"""
+		return LightMixin.CLASS
+
+	def get_available_states(self):
+		return ["OFF", "ON"]
