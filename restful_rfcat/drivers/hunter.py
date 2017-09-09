@@ -82,16 +82,6 @@ class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		"""
 		return self.CLASS
 
-	def _get(self):
-		""" Loads the given value from the remembered state """
-		return super(HunterCeiling, self)._get('%s/%s' % (self.CLASS, self.name))
-	def _set(self, state):
-		""" Saves the given value to the remembered state """
-		super(HunterCeiling, self)._set('%s/%s' % (self.CLASS, self.name), state)
-
-	def get_state(self):
-		return self._get()
-
 class HunterCeilingFan(HunterCeiling):
 	CLASS = 'fans'
 

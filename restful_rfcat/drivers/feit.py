@@ -103,16 +103,6 @@ class FeitElectric(DeviceDriver):
 		"""
 		return self.CLASS
 
-	def _state_path(self):
-		return '%s/%s' % (self.CLASS, self.name)
-
-	def _get(self):
-		""" Loads the given value from the remembered state """
-		return super(FeitElectric, self)._get(self._state_path())
-	def _set(self, state):
-		""" Saves the given value to the remembered state """
-		super(FeitElectric, self)._set(self._state_path(), state)
-
 	def get_state(self):
 		return self._get()
 

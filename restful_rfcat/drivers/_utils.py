@@ -16,24 +16,27 @@ class DeviceDriver(object):
 		raise NotImplementedError
 		return ["OFF", "1", "2", "3"]
 
-	def _get(self, key):
-		return persistence.get(key)
-	def _set(self, key, value):
-		persistence.set(key, value)
-		pubsub.publish({'device':self, 'state':value})
+	def _state_path(self):
+		return '%s/%s' % (self.get_class(), self.name)
 
-	def get_state(self):	# pragma: no cover
-		raise NotImplementedError
+	def _get(self):
+		""" Loads the current state from persistence """
+		return persistence.get(self._state_path())
+	def _set(self, state):
+		""" Saves the given state to persistence """
+		persistence.set(self._state_path(), state)
+		pubsub.publish({'device':self, 'state':state})
+
+	def get_state(self):
+		return self._get()
 	def set_state(self, state):	# pragma: no cover
 		raise NotImplementedError
 
 class FakeDevice(DeviceDriver):
 	def get_class(self):
 		return self.CLASS
-	def get_state(self):
-		return self._get("%s/%s" % (self.CLASS, self.name))
 	def set_state(self, state):
-		return self._set("%s/%s" % (self.CLASS, self.name), state)
+		return self._set(state)
 
 class FakeLight(FakeDevice):
 	CLASS = "lights"

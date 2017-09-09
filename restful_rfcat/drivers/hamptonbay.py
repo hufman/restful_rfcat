@@ -87,13 +87,6 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		"""
 		return self.CLASS
 
-	def _get(self):
-		""" Loads the given value from the remembered state """
-		return super(HamptonCeiling, self)._get('%s/%s' % (self.CLASS, self.name))
-	def _set(self, state):
-		""" Saves the given value to the remembered state """
-		super(HamptonCeiling, self)._set('%s/%s' % (self.CLASS, self.name), state)
-
 	def set_state_combined(self, light=None, fan=None):
 		""" light should be on or off
 		    fan should be 0,1,2,3
@@ -110,9 +103,6 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		fan_command = self.commands['fan%s'%fan][1:]
 		command = light_command + fan_command
 		self._send_command(command)
-
-	def get_state(self):
-		return self._get()
 
 class HamptonCeilingFan(HamptonCeiling):
 	CLASS = 'fans'
