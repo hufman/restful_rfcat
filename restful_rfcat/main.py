@@ -8,11 +8,17 @@ import restful_rfcat.web
 import logging
 logging.basicConfig(level=logging.INFO)
 
+import raven
+
 def sniff():
-	eavesdropper = restful_rfcat.config.EAVESDROPPER
-	while not radio_loop_stop.is_set():
-		eavesdropper.eavesdrop()
-	eavesdropper.radio.reset_device()
+	client = raven.Client(restful_rfcat.config.SENTRY_DSN)
+	try:
+		eavesdropper = restful_rfcat.config.EAVESDROPPER
+		while not radio_loop_stop.is_set():
+			eavesdropper.eavesdrop()
+		eavesdropper.radio.reset_device()
+	except:
+		client.captureException()
 
 def shutdown(*args):
 	radio_loop_stop.set()

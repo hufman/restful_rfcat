@@ -9,6 +9,8 @@ PERSISTENCE = [
 	restful_rfcat.persistence.HideyHole('/tmp/')
 ]
 
+SENTRY_DSN = None
+
 try:
 	from restful_rfcat.localconfig import *
 except Exception as e:

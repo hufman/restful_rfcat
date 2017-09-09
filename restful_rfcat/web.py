@@ -2,9 +2,13 @@ import bottle
 import os
 import time
 from markup import markup
-from restful_rfcat.config import DEVICES
+from restful_rfcat.config import DEVICES, SENTRY_DSN
 import restful_rfcat.pubsub
 import Queue
+
+# sentry integration
+import raven
+from raven.contrib.bottle import Sentry
 
 device_list = {}
 
@@ -120,7 +124,10 @@ def stream():
 			yield 'data: %s=%s\n\n' % (path, data['state'])
 
 def run_webserver():
-	bottle.run(server='paste', host='0.0.0.0', port=3350)
+	app = bottle.app()
+	app.catchall = False
+	app = Sentry(app, raven.Client(SENTRY_DSN))
+	bottle.run(app, server='paste', host='0.0.0.0', port=3350)
 
 if __name__ == '__main__':
 	run_webserver()
