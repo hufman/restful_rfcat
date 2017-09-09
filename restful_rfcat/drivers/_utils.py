@@ -1,3 +1,4 @@
+import inspect
 import re
 from restful_rfcat import persistence, pubsub
 
@@ -9,11 +10,11 @@ class DeviceDriver(object):
 		self.label = label
 
 	def get_class(self):	# pragma: no cover
-		raise NotImplementedError
+		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
 		return "lights"
 
 	def get_available_states(self):	# pragma: no cover
-		raise NotImplementedError
+		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
 		return ["OFF", "1", "2", "3"]
 
 	def _state_path(self):
@@ -30,7 +31,7 @@ class DeviceDriver(object):
 	def get_state(self):
 		return self._get()
 	def set_state(self, state):	# pragma: no cover
-		raise NotImplementedError
+		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
 
 class FakeDevice(DeviceDriver):
 	def get_class(self):
