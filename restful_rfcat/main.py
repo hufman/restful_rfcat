@@ -1,6 +1,7 @@
 import signal
 import sys
 import threading
+import traceback
 import restful_rfcat.config
 import restful_rfcat.drivers
 import restful_rfcat.web
@@ -20,6 +21,7 @@ def thread_logger(target):
 		target()
 	except:
 		client.captureException()
+		traceback.print_exc()
 
 def shutdown(*args):
 	# try to gracefully shut down all the background threads
