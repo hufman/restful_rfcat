@@ -67,7 +67,7 @@ class FeitElectric(DeviceDriver):
 		Which is hard to line up to byte boundaries
 
 		>>> FeitElectric._encode("01100110")
-		'\\xa0\\xa0\\x00\\x00\\x14\\x14\\x00\\x00\\x02\\x82\\x80\\x00\\x00PP\\x00\\x00\\n\\n\\x00\\x00\\x01A@\\x00\\x00('
+		'\\xa0\\xa0\\x00\\x00\\x14\\x14\\x00\\x00\\x02\\x82\\x80\\x00\\x00PP\\x00\\x00\\n\\n\\x00\\x00\\x01A@\\x00\\x00\\x00'
 		"""
 		pwm_str_key = FeitElectric._encode_pwm(bin_key)
 		# Each command bitstring has a gap of 22.5 0s, measured to be 20
@@ -80,11 +80,18 @@ class FeitElectric(DeviceDriver):
 			str_byte = pwm_str_key[pwm_index:pwm_index+8]
 			pwm_index = pwm_index + 8
 			if len(str_byte) < 8:
-				# wrap around the string
-				pwm_index = pwm_index - len(pwm_str_key)
-				str_byte = str_byte + pwm_str_key[0:pwm_index]
-				# make sure we don't get stuck
-				iterations = iterations - 1
+				if iterations > 0:
+					# wrap around the string
+					pwm_index = pwm_index - len(pwm_str_key)
+					str_byte = str_byte + pwm_str_key[0:pwm_index]
+					# make sure we don't get stuck
+					iterations = iterations - 1
+				else:
+					# fill out with 0s
+					pwm_index = pwm_index - len(pwm_str_key)
+					str_byte = str_byte + '0'*pwm_index
+					# make sure we don't get stuck
+					iterations = iterations - 1
 			int_byte = int(str_byte, 2)
 			key_packed = key_packed + struct.pack(">B", int_byte)
 		return key_packed
