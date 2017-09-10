@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class MQTTCommanding(object):
-	def __init__(self, hostname="localhost", port=1883, prefix=None, username=None, password=None, tls=None):
+	def __init__(self, hostname="localhost", port=1883, prefix='command', username=None, password=None, tls=None):
 		self.hostname = hostname
 		self.port = port
 		self.prefix = prefix
