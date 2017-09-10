@@ -10,28 +10,37 @@ logging.basicConfig(level=logging.INFO)
 
 import raven
 
-def sniff():
+threads = []
+
+def thread_logger(target):
+	""" Automatically adds a raven client to a thread """
 	client = raven.Client(restful_rfcat.config.SENTRY_DSN)
+	threading.local().raven_client = client
 	try:
-		eavesdropper = restful_rfcat.config.EAVESDROPPER
-		while not radio_loop_stop.is_set():
-			eavesdropper.eavesdrop()
-		eavesdropper.radio.reset_device()
+		target()
 	except:
 		client.captureException()
 
 def shutdown(*args):
-	radio_loop_stop.set()
-	sniffer.join(2)
+	# try to gracefully shut down all the background threads
+	for thread_info in threads:
+		if hasattr(thread_info['runnable'], 'stop'):
+			thread_info['runnable'].stop()
+	for thread_info in threads:
+		thread_info['thread'].join(1)
 	sys.exit()
 
 if __name__ == '__main__':
-	if restful_rfcat.config.EAVESDROPPER is not None:
+	if len(restful_rfcat.config.THREADS) > 0:
 		signal.signal(signal.SIGINT, shutdown)
-
-		radio_loop_stop = threading.Event()
-		sniffer = threading.Thread(target=sniff)
-		sniffer.daemon = True
-		sniffer.start()
+		for runnable_object in restful_rfcat.config.THREADS:
+			runner = runnable_object.run
+			thread = threading.Thread(target=thread_logger, args=(runner,))
+			thread.daemon = True
+			thread.start()
+			threads.append({
+				'thread': thread,
+				'runnable': runnable_object
+			})
 
 	restful_rfcat.web.run_webserver()

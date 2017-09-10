@@ -3,7 +3,9 @@ import restful_rfcat.persistence
 DEVICES = [
 ]
 
-EAVESDROPPER = None
+THREADS = [
+	# any threads that should run in the background
+]
 
 PERSISTENCE = [
 	restful_rfcat.persistence.HideyHole('/tmp/')

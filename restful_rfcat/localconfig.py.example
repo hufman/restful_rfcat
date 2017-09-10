@@ -46,4 +46,4 @@ DEVICES.append(
 DEVICES.append(FakeLight(name="fake", label="Fake light for testing"))
 DEVICES.append(FakeFan(name="fake", label="Fake fan for testing"))
 
-EAVESDROPPER = HunterCeilingEavesdropper()
+THREADS = [HunterCeilingEavesdropper()]

@@ -1,5 +1,6 @@
 # A device driver to interact with Hunter ceiling fans
 from operator import itemgetter
+import threading
 import logging
 import re
 import struct
@@ -225,3 +226,12 @@ class HunterCeilingEavesdropper(HunterCeiling):
 				key, count = max(self.packets_seen.items(), key=itemgetter(1))
 				self.handle_packet(key, count)
 				self.packets_seen.clear()
+
+	def run(self):
+		self.request_stop = threading.Event()
+		while not self.request_stop.is_set():
+			self.eavesdrop()
+		self.radio.reset_device()
+
+	def stop(self):
+		self.request_stop.set()
