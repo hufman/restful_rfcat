@@ -63,26 +63,36 @@ class FeitElectric(DeviceDriver):
 	@staticmethod
 	def _encode(bin_key):
 		"""
+		FeitElectric lights have a precise gap of 22.5-24 zeros between each command
+		Which is hard to line up to byte boundaries
+
 		>>> FeitElectric._encode("01100110")
-		'\\x00\\x00(('
+		'\\xa0\\xa0\\x00\\x00\\x14\\x14\\x00\\x00\\x02\\x82\\x80\\x00\\x00PP\\x00\\x00\\n\\n\\x00\\x00\\x01A@\\x00\\x00('
 		"""
 		pwm_str_key = FeitElectric._encode_pwm(bin_key)
-		pwm_str_key = "" + pwm_str_key #added leading 0 for clock
+		# Each command bitstring has a gap of 22.5 0s, measured to be 20
+		pwm_str_key = pwm_str_key.strip('0') + '0' * 24
 		#print "Binary (PWM) key:",pwm_str_key
-		dec_pwm_key = int(pwm_str_key, 2);
-		#print "Decimal (PWN) key:",dec_pwm_key
 		key_packed = ''
-		while dec_pwm_key > 0:
-			key_packed = struct.pack(">Q", dec_pwm_key & (2**64-1)) + key_packed
-			dec_pwm_key = dec_pwm_key >> 64
-		# trim to the correct amount of white space
-		key_packed = '\0\0' + key_packed.strip('\0')
+		pwm_index = 0
+		iterations = 5
+		while pwm_index != len(pwm_str_key) and iterations >= 0:
+			str_byte = pwm_str_key[pwm_index:pwm_index+8]
+			pwm_index = pwm_index + 8
+			if len(str_byte) < 8:
+				# wrap around the string
+				pwm_index = pwm_index - len(pwm_str_key)
+				str_byte = str_byte + pwm_str_key[0:pwm_index]
+				# make sure we don't get stuck
+				iterations = iterations - 1
+			int_byte = int(str_byte, 2)
+			key_packed = key_packed + struct.pack(">B", int_byte)
 		return key_packed
 
 	@classmethod
 	def _send(klass, bits):
 		symbols = klass._encode(bits)
-		klass.radio.send(symbols)
+		klass.radio.send(symbols, repeat=5)
 
 	def _send_command(self, command):
 		logger.info("Sending command %s to %s" % (command, self.address))
