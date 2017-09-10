@@ -174,6 +174,8 @@ class LightMixin(object):
 		'OFF': 'OFF',
 		'1': 'ON',
 		'0': 'OFF',
+		'TRUE': 'ON',
+		'FALSE': 'OFF',
 	}
 
 	@classmethod
@@ -201,7 +203,7 @@ class LightMixin(object):
 	def get_acceptable_states(self):
 		"""
 		>>> LightMixin().get_acceptable_states()
-		['0', '1', 'OFF', 'ON']
+		['0', '1', 'FALSE', 'OFF', 'ON', 'TRUE']
 		"""
 		return sorted(self.STATE_COMMANDS.keys())
 
