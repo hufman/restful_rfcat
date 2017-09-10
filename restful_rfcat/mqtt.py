@@ -25,10 +25,14 @@ class MQTTCommanding(object):
 
 	def _find_device(self, path):
 		from restful_rfcat.web import device_list
-		parts = path.split('/', 1)
-		class_devices = device_list.get(parts[0], {})
-		device = class_devices.get(parts[1], None)
-		return device
+		parts = path.split('/')
+		if len(parts) >= 2:
+			class_devices = device_list.get(parts[0], {})
+			device = class_devices.get(parts[1], None)
+			if device is not None and len(parts) == 3:
+				device = device.subdevices().get(parts[2], None)
+			return device
+		return None
 
 	def _set_device_state(self, path, state):
 		device = self._find_device(path)
@@ -54,8 +58,10 @@ class MQTTCommanding(object):
 		self.client.connect(self.hostname, self.port, 60)
 		if self.prefix is not None:
 			self.client.subscribe("%s/+/+" % (self.prefix.rstrip('/'),))
+			self.client.subscribe("%s/+/+/+" % (self.prefix.rstrip('/'),))
 		else:
 			self.client.subscribe("+/+")
+			self.client.subscribe("+/+/+")
 		self.client.loop_forever()
 		
 	def stop(self):
