@@ -27,9 +27,10 @@ def rest_set_state(device):
 	def _wrapped(*args, **kwargs):
 		state = bottle.request.body.read()
 		bottle.response.content_type = 'text/plain'
-		if state not in device.get_available_states():
-			return bottle.HTTPError(400, "Invalid state")
-		return device.set_state(state)
+		try:
+			return device.set_state(state)
+		except ValueError:
+			return bottle.HTTPError(400, "Invalid state: %s" % (state,))
 	_wrapped.__name__ = 'put_%s' % (device.name,)
 	return _wrapped
 def rest_list_states(device):
