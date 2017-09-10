@@ -60,3 +60,22 @@ class MQTTCommanding(object):
 		
 	def stop(self):
 		self.client.disconnect()
+
+class MQTTHomeAssistantCommanding(MQTTCommanding):
+	def __init__(self, hostname="localhost", port=1883, discovery_prefix="homeassistant", username=None, password=None, tls=None):
+		super(MQTTHomeAssistantCommanding, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, prefix=discovery_prefix)
+
+	def _on_message(self, mqttc, obj, msg):
+		topic = msg.topic
+		data = msg.payload
+		logger.info("Incoming MQTT broadcast: %s %s" % (topic, data))
+		topic_parts = topic.split('/')
+		if len(topic_parts) > 2:
+			object_id = topic_parts[-2]
+			path = object_id.replace('_', '/')
+			self._set_device_state(path, data)
+
+	def run(self):
+		self.client.connect(self.hostname, self.port, 60)
+		self.client.subscribe("%s/+/+/set" % (self.prefix.rstrip('/'),))
+		self.client.loop_forever()
