@@ -104,6 +104,19 @@ class MQTTHomeAssistant(MQTT):
 				'state_topic': state_topic,
 				'command_topic': command_topic,
 			}
+			if klass == 'lights':
+				states = device.get_available_states()
+				config['payload_off'] = states[0]
+				config['payload_on'] = states[1]
+			if klass == 'fans':
+				states = device.get_available_states()
+				config['speed_state_topic'] = state_topic
+				config['speed_command_topic'] = command_topic
+				config['payload_off'] = states[0]
+				config['payload_low_speed'] = states[1]
+				config['payload_medium_speed'] = states[2]
+				config['payload_high_speed'] = states[3]
+				config['speeds'] = ['off', 'low', 'medium', 'high']
 			announcement = {
 				'topic': config_topic,
 				'payload': json.dumps(config),
