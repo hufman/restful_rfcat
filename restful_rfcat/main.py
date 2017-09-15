@@ -17,11 +17,14 @@ def thread_logger(target):
 	""" Automatically adds a raven client to a thread """
 	client = raven.Client(restful_rfcat.config.SENTRY_DSN)
 	threading.local().raven_client = client
-	try:
-		target()
-	except:
-		client.captureException()
-		traceback.print_exc()
+	running = True
+	while running:
+		try:
+			target()
+			running = False
+		except:
+			client.captureException()
+			traceback.print_exc()
 
 def shutdown(*args):
 	# try to gracefully shut down all the background threads
