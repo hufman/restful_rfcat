@@ -42,21 +42,8 @@ class DeviceDriver(object):
 	def set_state(self, state):	# pragma: no cover
 		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
 
-class FakeDevice(DeviceDriver):
-	def get_class(self):
-		return self.CLASS
-	def set_state(self, state):
-		return self._set(state)
 
-class FakeLight(FakeDevice):
-	CLASS = "lights"
-	def get_available_states(self):
-		return ["OFF", "ON"]
 
-class FakeFan(FakeDevice):
-	CLASS = "fans"
-	def get_available_states(self):
-		return ["OFF", "LOW", "MED", "HI"]
 
 class PWMThreeSymbolMixin(object):
 	@staticmethod
