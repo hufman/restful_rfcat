@@ -40,13 +40,8 @@ def rest_list_states(device):
 		return '\n'.join(device.get_acceptable_states()) + '\n'
 	_wrapped.__name__ = 'put_%s' % (device.name,)
 	return _wrapped
-def device_path(device):
-	klass = device.get_class()
-	name = device.name
-	path = '/%s/%s' % (klass, name)
-	return path
 for device in DEVICES:
-	path = device_path(device)
+	path = '/' + device._state_path()
 	bottle.get(path)(rest_get_state(device))
 	bottle.post(path)(rest_set_state(device))  # openhab can only post
 	bottle.put(path)(rest_set_state(device))
@@ -54,7 +49,7 @@ for device in DEVICES:
 	# check for subdevices
 	if hasattr(device, 'subdevices'):
 		for name,subdev in device.subdevices().items():
-			subpath = '%s/%s' % (path, name)
+			subpath = '/' + subdev._state_path()
 			bottle.get(subpath)(rest_get_state(subdev))
 			bottle.post(subpath)(rest_set_state(subdev))  # openhab can only post
 			bottle.put(subpath)(rest_set_state(subdev))
@@ -75,7 +70,7 @@ def index():
 		page.h2(klass)
 		for name in sorted(klass_devices.keys()):
 			device = klass_devices[name]
-			path = device_path(device)
+			path = device._state_path()
 			state = device.get_state()
 			if state is None:
 				state = "Unknown"
@@ -106,7 +101,7 @@ def stream():
 		klass_devices = device_list[klass]
 		for name in sorted(klass_devices.keys()):
 			device = klass_devices[name]
-			path = device_path(device)
+			path = device._state_path()
 			state = device.get_state()
 			if state is None:
 				state = "Unknown"
@@ -121,7 +116,7 @@ def stream():
 				yield ':\n\n'
 				continue
 			device = data['device']
-			path = device_path(device)
+			path = device._state_path()
 			yield 'data: %s=%s\n\n' % (path, data['state'])
 
 def run_webserver():
