@@ -20,6 +20,17 @@ class Radio(object):
 		if Radio.device is None:
 			Radio.device = rflib.RfCat()
 
+	@staticmethod
+	def ping():
+		with Radio.lock:
+			try:
+				Radio._create_device()
+				result = Radio.device.ping()
+				return result[1] == 0
+			except:
+				pass
+		return False
+
 class OOKRadio(Radio):
 	def __init__(self, frequency, baudrate, bandwidth=100000):
 		self.frequency = frequency

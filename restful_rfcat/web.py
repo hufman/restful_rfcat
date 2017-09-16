@@ -5,6 +5,7 @@ from markup import markup
 from restful_rfcat.config import DEVICES, SENTRY_DSN
 import restful_rfcat.example_configs
 import restful_rfcat.pubsub
+import restful_rfcat.radio
 import Queue
 
 # sentry integration
@@ -194,6 +195,15 @@ def stream():
 			device = data['device']
 			path = device._state_path()
 			yield 'data: %s=%s\n\n' % (path, data['state'])
+
+@bottle.get('/ping')
+def ping():
+	radio = restful_rfcat.radio.Radio()
+	working = radio.ping()
+	if working:
+		return "OK\n"
+	else:
+		return bottle.HTTPError(500, "Unresponsive radio")
 
 def run_webserver():
 	app = bottle.app()
