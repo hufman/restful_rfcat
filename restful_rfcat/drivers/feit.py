@@ -4,7 +4,7 @@ import logging
 import struct
 import re
 from restful_rfcat import radio
-from restful_rfcat.drivers._utils import DeviceDriver
+from restful_rfcat.drivers._utils import DeviceDriver, SubDeviceDriver
 
 logger = logging.getLogger(__name__)
 
@@ -123,39 +123,38 @@ class FeitElectric(DeviceDriver):
 	def get_state(self):
 		return self._get()
 
+class FeitElectricLightsColor(SubDeviceDriver):
+	STATE_COMMANDS = {
+		"RED": "RED",
+		"GREEN": "GREEN",
+		"BLUE": "BLUE",
+		"WHITE": "WHITE"
+	}
+
+	@classmethod
+	def get_name(klass):
+		return "color"
+
+	def set_state(self, state):
+		command = self._state_to_command(state)
+		self.parent._send_command(command.lower())
+		self._set(state)
+		return state
+
 class FeitElectricLights(FeitElectric):
 	CLASS = 'lights'
 
-	@property
-	def subdevices(self):
-		return {'color': FeitElectricLightsColor(name=self.name, label=self.label, address=self.address)}
+	SUBDEVICES = [FeitElectricLightsColor]
 
 	def get_acceptable_states(self):
-		return ["OFF", "ON"] + FeitElectricLightsColor.COLORS
+		return ["OFF", "ON"] + FeitElectricLightsColor.get_acceptable_states()
 
 	def get_available_states(self):
 		return ["OFF", "ON"]
 
 	def set_state(self, state):
-		if state in FeitElectricLightsColor.COLORS:
+		if state in self.subdevices['color'].get_acceptable_states():
 			return self.subdevices['color'].set_state(state)
-		if state not in self.get_available_states():
-			raise ValueError("Invalid state: %s" % (state,))
-		self._send_command(state.lower())
-		self._set(state)
-		return state
-
-class FeitElectricLightsColor(FeitElectric):
-	CLASS = 'lights'
-	COLORS = ["RED", "GREEN", "BLUE", "WHITE"]
-
-	def _state_path(self):
-		return '%s/%s/color' % (self.CLASS, self.name)
-
-	def get_available_states(self):
-		return self.COLORS
-
-	def set_state(self, state):
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
 		self._send_command(state.lower())
