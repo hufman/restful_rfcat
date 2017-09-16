@@ -126,6 +126,7 @@ class FeitElectric(DeviceDriver):
 class FeitElectricLights(FeitElectric):
 	CLASS = 'lights'
 
+	@property
 	def subdevices(self):
 		return {'color': FeitElectricLightsColor(name=self.name, label=self.label, address=self.address)}
 
@@ -137,7 +138,7 @@ class FeitElectricLights(FeitElectric):
 
 	def set_state(self, state):
 		if state in FeitElectricLightsColor.COLORS:
-			return self.subdevices()['color'].set_state(state)
+			return self.subdevices['color'].set_state(state)
 		if state not in self.get_available_states():
 			raise ValueError("Invalid state: %s" % (state,))
 		self._send_command(state.lower())

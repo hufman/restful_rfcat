@@ -30,7 +30,7 @@ class MQTTCommanding(object):
 			class_devices = device_list.get(parts[0], {})
 			device = class_devices.get(parts[1], None)
 			if device is not None and len(parts) == 3:
-				device = device.subdevices().get(parts[2], None)
+				device = device.subdevices.get(parts[2], None)
 			return device
 		return None
 

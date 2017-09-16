@@ -4,6 +4,9 @@ from restful_rfcat import persistence, pubsub
 
 # Useful utilities or classes for drivers
 class DeviceDriver(object):
+	# a list of subdevice classes to expose
+	SUBDEVICES = []
+
 	def __init__(self, name, label):
 		""" Save a name and display label """
 		self.name = name
@@ -45,8 +48,57 @@ class DeviceDriver(object):
 	def set_state(self, state):	# pragma: no cover
 		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
 
+	@property
+	def subdevices(self):
+		return dict(((dev.get_name(), dev(self)) for dev in self.SUBDEVICES))
 
+class SubDeviceDriver(DeviceDriver):
+	""" Common functionality to make it easy to implement subdevices
 
+	Each subdevice should provide a list of STATE_COMMANDS, which
+	maps a POSTed state to the actual command to run
+	This allows for multiple state aliases
+	"""
+	STATE_COMMANDS = {}
+
+	@classmethod
+	def _state_to_command(klass, state):
+		"""
+		>>> SubDeviceDriver(None)._state_to_command('OFF')
+		Traceback (most recent call last):
+		    ...
+		ValueError: OFF
+		"""
+		try:
+			return klass.STATE_COMMANDS[state.upper()]
+		except KeyError:
+			raise ValueError(state)
+
+	def __init__(self, parent):
+		self.parent = parent
+
+	@classmethod
+	def get_name(klass):	# pragma: no cover
+		""" Get the subdevice name in the api to place this device """
+		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))
+		return "color"
+
+	def _state_path(self):
+		return '%s/%s' % (self.parent._state_path(), self.get_name())
+
+	def get_acceptable_states(self):
+		"""
+		>>> SubDeviceDriver(None).get_acceptable_states()
+		[]
+		"""
+		return sorted(self.STATE_COMMANDS.keys())
+
+	def get_available_states(self):
+		"""
+		>>> SubDeviceDriver(None).get_available_states()
+		[]
+		"""
+		return sorted(list(set(self.STATE_COMMANDS.values())))
 
 class PWMThreeSymbolMixin(object):
 	@staticmethod
