@@ -9,6 +9,9 @@ class DeviceDriver(object):
 		self.name = name
 		self.label = label
 
+	def get_name(self):
+		return self.name
+
 	def get_class(self):	# pragma: no cover
 		""" Get the namespace in the api to place this device """
 		raise NotImplementedError('%s.%s' % (self.__class__.__name__, inspect.currentframe().f_code.co_name))

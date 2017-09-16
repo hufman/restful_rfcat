@@ -20,7 +20,7 @@ def rest_get_state(device):
 	def _wrapped(*args, **kwargs):
 		bottle.response.content_type = 'text/plain'
 		return device.get_state()
-	_wrapped.__name__ = 'get_%s' % (device.name,)
+	_wrapped.__name__ = 'get_%s' % (device.get_name(),)
 	return _wrapped
 def rest_set_state(device):
 	""" Inside an HTTP PUT, set a device's state """
@@ -31,14 +31,14 @@ def rest_set_state(device):
 			return device.set_state(state)
 		except ValueError:
 			return bottle.HTTPError(400, "Invalid state: %s" % (state,))
-	_wrapped.__name__ = 'put_%s' % (device.name,)
+	_wrapped.__name__ = 'put_%s' % (device.get_name(),)
 	return _wrapped
 def rest_list_states(device):
 	""" Inside an HTTP OPTIONS, list a device's acceptable inputs """
 	def _wrapped(*args, **kwargs):
 		bottle.response.content_type = 'text/plain'
 		return '\n'.join(device.get_acceptable_states()) + '\n'
-	_wrapped.__name__ = 'put_%s' % (device.name,)
+	_wrapped.__name__ = 'options_%s' % (device.get_name(),)
 	return _wrapped
 for device in DEVICES:
 	path = '/' + device._state_path()
@@ -56,7 +56,7 @@ for device in DEVICES:
 			bottle.route(subpath, method='OPTIONS')(rest_list_states(subdev))
 	# save to index
 	klass = device.get_class()
-	name = device.name
+	name = device.get_name()
 	klass_devices = device_list.get(klass, {})
 	klass_devices[name] = device
 	device_list[klass] = klass_devices
