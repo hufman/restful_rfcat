@@ -75,13 +75,10 @@ class HunterCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		return bin_key
 
 class HunterCeilingFan(ThreeSpeedFanMixin, HunterCeiling):
-	def set_state(self, state):
-		if state not in self.get_available_states():
-			raise ValueError("Invalid state: %s" % (state,))
-		command = self._state_to_command(state)
-		self._send_command(command)
-		self._set(state)
-		return state
+	def _send_command(self, command, repeat=None):
+		# ThreeSpeedFanMixin will send a command of 0,1,2,3
+		# Change this to fan0, fan1, fan2, fan3 for HunterCeiling
+		super(HunterCeilingFan, self)._send_command('fan' + command, repeat)
 
 class HunterCeilingLight(LightMixin, HunterCeiling):
 	last_set = 0
@@ -203,7 +200,10 @@ class HunterCeilingEavesdropper(HunterCeiling):
 					state = 'ON'
 			if found_device is not None and state is not None:
 				logger.info("Eavesdropped command to turn %s-%s to %s" % (found_device.name, device_type, state))
-				found_device._set(state)
+				if hasattr(found_device, '_handle_state_update'):
+					found_device._handle_state_update(state)
+				else:
+					found_device._set(state)
 
 	def eavesdrop(self):
 		packets = self.radio.receive_packets(20)

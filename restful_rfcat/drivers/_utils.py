@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import re
 from restful_rfcat import persistence, pubsub
 
@@ -68,6 +69,13 @@ class SubDeviceDriver(DeviceDriver):
 		Traceback (most recent call last):
 		    ...
 		ValueError: OFF
+
+		>>> ThreeSpeedFanMixinPower(None)._state_to_command('OFF')
+		'OFF'
+		>>> ThreeSpeedFanMixinPower(None)._state_to_command('BLUE')
+		Traceback (most recent call last):
+		    ...
+		ValueError: BLUE
 		"""
 		try:
 			return klass.STATE_COMMANDS[state.upper()]
@@ -90,6 +98,14 @@ class SubDeviceDriver(DeviceDriver):
 		"""
 		>>> SubDeviceDriver(None).get_acceptable_states()
 		[]
+
+		>>> ThreeSpeedFanMixinPower(None).get_acceptable_states()
+		['0', '1', 'FALSE', 'OFF', 'ON', 'TRUE']
+
+		>>> ThreeSpeedFanMixinSpeed(None).get_acceptable_states()
+		['1', '2', '3', 'H', 'HI', 'HIGH', 'L', 'LO', 'LOW', 'M', 'MED', 'MID']
+		>>> ThreeSpeedFanMixinCommand(None).get_acceptable_states()
+		['0', '1', '2', '3', 'H', 'HI', 'HIGH', 'L', 'LO', 'LOW', 'M', 'MED', 'MID', 'O', 'OFF']
 		"""
 		return sorted(self.STATE_COMMANDS.keys())
 
@@ -97,6 +113,9 @@ class SubDeviceDriver(DeviceDriver):
 		"""
 		>>> SubDeviceDriver(None).get_available_states()
 		[]
+
+		>>> ThreeSpeedFanMixinPower(None).get_available_states()
+		['OFF', 'ON']
 		"""
 		return sorted(list(set(self.STATE_COMMANDS.values())))
 
@@ -151,8 +170,86 @@ class PWMThreeSymbolMixin(object):
 				return None
 		return ''.join(bits)
 
-class ThreeSpeedFanMixin(object):
-	CLASS = 'fans'
+class ThreeSpeedFanMixinPower(SubDeviceDriver):
+	"""
+	>>> ThreeSpeedFanMixinPower(None).get_available_states()
+	['OFF', 'ON']
+	"""
+	STATE_COMMANDS = {
+		'ON': 'ON',
+		'OFF': 'OFF',
+		'1': 'ON',
+		'0': 'OFF',
+		'TRUE': 'ON',
+		'FALSE': 'OFF',
+	}
+
+	@classmethod
+	def get_name(klass):
+		return "power"
+
+	def set_state(self, state):
+		command = self._state_to_command(state)
+		# power=on should restore previous speed
+		if command == 'ON':
+			# load up previous speed
+			speed_control = self.parent.subdevices['speed']
+			speed = speed_control.get_state()
+			if speed is None:
+				speed_control.set_state('1')	# default low speed when turning on
+			else:
+				speed_control.set_state(speed)	# tell the physical device to resume this speed
+			return state
+		else:	# power off
+			# push the 0 button on the remote
+			self.parent.subdevices['command'].set_state('0')
+			return state
+
+class ThreeSpeedFanMixinSpeed(SubDeviceDriver):
+	"""
+	>>> ThreeSpeedFanMixinSpeed(None).get_available_states()
+	['1', '2', '3']
+	"""
+
+	# advertise these STATE_COMMANDS here
+	# so that this subdevice gets the speed commands
+	STATE_COMMANDS = {
+		'1': '1',
+		'2': '2',
+		'3': '3',
+		'L': '1',
+		'LO': '1',
+		'LOW': '1',
+		'M': '2',
+		'MED': '2',
+		'MID': '2',
+		'H': '3',
+		'HI': '3',
+		'HIGH': '3',
+	}
+
+	@classmethod
+	def get_name(klass):
+		return "speed"
+
+	def set_state(self, state):
+		command = self._state_to_command(state)
+		# speed=0 should be instead treated as power=off
+		if command == '0':
+			return self.parent.subdevices['power'].set_state('OFF')
+		else:
+			self.parent.subdevices['command'].set_state(state)
+			return state
+
+class ThreeSpeedFanMixinCommand(SubDeviceDriver):
+	""" A virtual device that allows direct fan control
+
+	Implements a single endpoint to directly set the speed of the fan,
+	and view the current speed
+
+	>>> ThreeSpeedFanMixinCommand(None).get_available_states()
+	['0', '1', '2', '3']
+	"""
 
 	STATE_COMMANDS = {
 		'0': '0',
@@ -172,6 +269,45 @@ class ThreeSpeedFanMixin(object):
 		'HIGH': '3',
 	}
 
+	@classmethod
+	def get_name(klass):
+		return "command"
+
+	def _handle_state_update(self, state):
+		""" Handle the state update from an eavesdropper
+		Takes care of distributing state updates to other subdevs
+		"""
+		command = self._state_to_command(state)
+		self._set(command)  # command sudevice
+		if command != '0':
+			self.parent._set('ON')
+			self.parent.subdevices['power']._set('ON')
+			self.parent.subdevices['speed']._set(state)
+		else:
+			self.parent._set('OFF')
+			self.parent.subdevices['power']._set('OFF')
+
+	def set_state(self, state):
+		""" Actually controls the fan, and the distributes state updates """
+		command = self._state_to_command(state)
+		self.parent._send_command(command)
+		# save the updated state, as the numeric command
+		self._handle_state_update(state)
+		return state
+
+class ThreeSpeedFanMixin(object):
+	""" Implements a fan that has a single set of commands to control fan speed
+
+	Supported Speeds: OFF, LOW, MED, HI
+	"""
+	CLASS = 'fans'
+
+	SUBDEVICES = [
+		ThreeSpeedFanMixinPower,	# explicit power control
+		ThreeSpeedFanMixinSpeed,	# last configured speed
+		ThreeSpeedFanMixinCommand	# the last button that was pressed
+	]
+
 	def get_class(self):
 		"""
 		>>> ThreeSpeedFanMixin().get_class()
@@ -179,34 +315,41 @@ class ThreeSpeedFanMixin(object):
 		"""
 		return self.CLASS
 
-	@classmethod
-	def _state_to_command(klass, state):
-		"""
-		>>> ThreeSpeedFanMixin()._state_to_command('MED')
-		'fan2'
-		>>> ThreeSpeedFanMixin()._state_to_command('BLUE')
-		Traceback (most recent call last):
-		    ...
-		ValueError: BLUE
-		"""
-		try:
-			return 'fan' + klass.STATE_COMMANDS[state.upper()]
-		except KeyError:
-			raise ValueError(state)
+	@property
+	def subdevices(self):
+		return dict(((dev.get_name(), dev(self)) for dev in self.SUBDEVICES))
 
 	def get_acceptable_states(self):
 		"""
 		>>> ThreeSpeedFanMixin().get_acceptable_states()
-		['0', '1', '2', '3', 'H', 'HI', 'HIGH', 'L', 'LO', 'LOW', 'M', 'MED', 'MID', 'O', 'OFF']
+		['0', '1', '2', '3', 'FALSE', 'H', 'HI', 'HIGH', 'L', 'LO', 'LOW', 'M', 'MED', 'MID', 'O', 'OFF', 'ON', 'TRUE']
 		"""
-		return sorted(self.STATE_COMMANDS.keys())
+		all_states = itertools.chain.from_iterable((d.get_acceptable_states() for d in self.subdevices.values()))
+		return sorted(list(set(all_states)))
 
 	def get_available_states(self):
 		"""
 		>>> ThreeSpeedFanMixin().get_available_states()
-		['0', '1', '2', '3']
+		['OFF', 'ON']
 		"""
-		return sorted(list(set(self.STATE_COMMANDS.values())))
+		returnable_states = self.SUBDEVICES[0](self).get_available_states()
+		return sorted(list(set(returnable_states)))
+
+	def get_state(self):
+		d = self.SUBDEVICES[0](self)
+		return d.get_state()
+
+	def set_state(self, state):
+		# find the first subdevice that claims the given state
+		for device in self.SUBDEVICES:
+			d = device(self)
+			if state in d.get_acceptable_states():
+				return d.set_state(state)
+		raise ValueError(state)
+
+	def _handle_state_update(self, state):
+		# eavesdropped from a remote
+		self.subdevices['command']._handle_state_update(state)
 
 class LightMixin(object):
 	CLASS = 'lights'

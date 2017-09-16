@@ -12,11 +12,11 @@ class TestPubSubDriver(unittest.TestCase):
 		pubsub.topic_subscribers.clear()
 
 	def test_publish_no_subscriptions(self):
-		device = drivers.FakeFan(name="test", label="Test")
+		device = drivers.FakeLight(name="test", label="Test")
 		device.set_state("ON")
 
 	def test_publish_subscriptions(self):
-		device = drivers.FakeFan(name="test", label="Test")
+		device = drivers.FakeLight(name="test", label="Test")
 		with pubsub.subscribe() as event_source:
 			self.assertEqual(0, event_source.qsize())
 			device.set_state("ON")

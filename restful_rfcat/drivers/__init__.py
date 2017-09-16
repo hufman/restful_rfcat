@@ -4,22 +4,21 @@ from restful_rfcat.drivers.hamptonbay import HamptonCeilingFan, HamptonCeilingLi
 from restful_rfcat.drivers.feit import FeitElectricLights
 
 # example implementation
-from restful_rfcat.drivers._utils import DeviceDriver
+from restful_rfcat.drivers._utils import DeviceDriver, LightMixin, ThreeSpeedFanMixin
 class FakeDevice(DeviceDriver):
 	def get_class(self):
 		return self.CLASS
+	def _send_command(self, command):
+		# nop
+		pass
 	def set_state(self, state):
 		return self._set(state)
 
-class FakeLight(FakeDevice):
-	CLASS = "lights"
-	def get_available_states(self):
-		return ["OFF", "ON"]
+class FakeLight(LightMixin, FakeDevice):
+	pass
 
-class FakeFan(FakeDevice):
-	CLASS = "fans"
-	def get_available_states(self):
-		return ["OFF", "LOW", "MED", "HI"]
+class FakeFan(ThreeSpeedFanMixin, FakeDevice):
+	pass
 
 # clean up the namespace
-del DeviceDriver, FakeDevice
+del DeviceDriver, FakeDevice, LightMixin, ThreeSpeedFanMixin

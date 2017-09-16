@@ -63,10 +63,6 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		symbols = klass._encode(bits)
 		klass.radio.send(symbols)
 
-	def _send_command(self, bits):
-		logger.info("Sending bits %s to %s" % (bits, self.dip_switch))
-		self._send(self._get_bin_key(bits))
-
 	def _get_bin_key(self, bits):
 		"""
 		>>> HamptonCeiling(name='test', label='Test', dip_switch='1011')._get_bin_key('1011')
@@ -89,26 +85,22 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 			light = light.lower()
 		if fan is None:
 			device = self._get_device(device_type='Fan', dip_switch=self.dip_switch)
-			fan = device.get_state()
+			fan = device.subdevices['command'].get_state()
 			fan = '0' if fan is None else fan
 		light_command = '0' if light == 'on' else '1'
 		fan_command = self.commands['fan%s'%fan][1:]
 		command = light_command + fan_command
-		self._send_command(command)
+		logger.info("Sending bits %s to %s" % (command, self.dip_switch))
+		self._send(self._get_bin_key(command))
 
 class HamptonCeilingFan(ThreeSpeedFanMixin, HamptonCeiling):
-	def set_state(self, state):
-		if state not in self.get_available_states():
-			raise ValueError("Invalid state: %s" % (state,))
-		command = self._state_to_command(state)
+	def _send_command(self, command, repeat=None):
+		# ThreeSpeedFanMixin will send a command of 0,1,2,3
+		# Properly integrate it into HamptonCeiling's combined commands
 		super(HamptonCeilingFan, self).set_state_combined(light=None, fan=command)
-		self._set(state)
-		return state
 
 class HamptonCeilingLight(LightMixin, HamptonCeiling):
 	def set_state(self, state):
-		if state not in self.get_available_states():
-			raise ValueError("Invalid state: %s" % (state,))
 		command = self._state_to_command(state)
 		super(HamptonCeilingLight, self).set_state_combined(light=command.lower(), fan=None)
 		self._set(state)

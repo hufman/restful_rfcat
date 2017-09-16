@@ -110,13 +110,17 @@ class MQTTHomeAssistant(MQTT):
 				config['payload_on'] = states[1]
 			if klass == 'fans':
 				states = device.get_available_states()
+				speed_states = device.subdevices['speed'].get_available_states()
+				topic = self._hass_topic(device.subdevices['speed']._state_path())
+				state_topic = '%s/state' % (topic,)
+				command_topic = '%s/set' % (topic,)
 				config['speed_state_topic'] = state_topic
 				config['speed_command_topic'] = command_topic
-				config['payload_off'] = states[0]
-				config['payload_low_speed'] = states[1]
-				config['payload_medium_speed'] = states[2]
-				config['payload_high_speed'] = states[3]
-				config['speeds'] = ['off', 'low', 'medium', 'high']
+				config['payload_off'] = states[0]	# main device
+				config['payload_low_speed'] = speed_states[0]	# speed device
+				config['payload_medium_speed'] = speed_states[1]	# speed device
+				config['payload_high_speed'] = speed_states[2]	# speed device
+				config['speeds'] = ['low', 'medium', 'high']
 			announcement = {
 				'topic': config_topic,
 				'payload': json.dumps(config),

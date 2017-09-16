@@ -105,6 +105,7 @@ class TestMQTT(unittest.TestCase):
 
 class TestMQTTHomeAssistant(unittest.TestCase):
 	def setUp(self):
+		self.maxDiff = None
 		self.mock = mock.Mock()
 		settings = {
 			"_publish": self.mock
@@ -136,13 +137,13 @@ class TestMQTTHomeAssistant(unittest.TestCase):
 			'name': 'Fake Device',
 			'state_topic': 'homeassistant/fan/fans_fake/state',
 			'command_topic': 'homeassistant/fan/fans_fake/set',
-			'speed_state_topic': 'homeassistant/fan/fans_fake/state',
-			'speed_command_topic': 'homeassistant/fan/fans_fake/set',
+			'speed_state_topic': 'homeassistant/fan/fans_fake_speed/state',
+			'speed_command_topic': 'homeassistant/fan/fans_fake_speed/set',
 			'payload_off': 'OFF',
-			'payload_low_speed': 'LOW',
-			'payload_medium_speed': 'MED',
-			'payload_high_speed': 'HI',
-			'speeds': ['off', 'low', 'medium', 'high']
+			'payload_low_speed': '1',
+			'payload_medium_speed': '2',
+			'payload_high_speed': '3',
+			'speeds': ['low', 'medium', 'high']
 		}
 		self.assertEqual(desired_fan, fan)
 
@@ -169,13 +170,13 @@ class TestMQTTHomeAssistant(unittest.TestCase):
 			'name': 'Fake Device',
 			'state_topic': 'myhass/fan/fans_fake/state',
 			'command_topic': 'myhass/fan/fans_fake/set',
-			'speed_state_topic': 'myhass/fan/fans_fake/state',
-			'speed_command_topic': 'myhass/fan/fans_fake/set',
+			'speed_state_topic': 'myhass/fan/fans_fake_speed/state',
+			'speed_command_topic': 'myhass/fan/fans_fake_speed/set',
 			'payload_off': 'OFF',
-			'payload_low_speed': 'LOW',
-			'payload_medium_speed': 'MED',
-			'payload_high_speed': 'HI',
-			'speeds': ['off', 'low', 'medium', 'high']
+			'payload_low_speed': '1',
+			'payload_medium_speed': '2',
+			'payload_high_speed': '3',
+			'speeds': ['low', 'medium', 'high']
 		}
 		self.assertEqual(desired_fan, fan)
 
