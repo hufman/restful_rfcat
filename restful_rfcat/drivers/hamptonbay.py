@@ -84,8 +84,9 @@ class HamptonCeiling(DeviceDriver, PWMThreeSymbolMixin):
 		"""
 		if light is None:
 			device = self._get_device(device_type='Light', dip_switch=self.dip_switch)
-			light = device.get_state().lower()
+			light = device.get_state()
 			light = 'on' if light is None else light
+			light = light.lower()
 		if fan is None:
 			device = self._get_device(device_type='Fan', dip_switch=self.dip_switch)
 			fan = device.get_state()
