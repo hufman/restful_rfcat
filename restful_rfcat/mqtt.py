@@ -7,6 +7,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class MQTTCommanding(object):
+	""" A simple MQTT Commanding implementation
+	Devices (fans/fake) are exposed at command/fans/fake
+	and accept the same states that would be POSTed through HTTP
+	"""
 	def __init__(self, hostname="localhost", port=1883, prefix='command', username=None, password=None, tls=None):
 		self.hostname = hostname
 		self.port = port
@@ -68,6 +72,14 @@ class MQTTCommanding(object):
 		self.client.disconnect()
 
 class MQTTHomeAssistantCommanding(MQTTCommanding):
+	""" MQTT Commanding from HomeAssistant
+	Relies on restful_rfcat.persistence.MQTTHomeAssistant to publish the
+	configuration to point to these endpoints
+	This specifically means that the same discovery_prefix should be used in both
+	Devices (fans/fake) are commanded from homeassistant/{fans_fake}/set
+	HomeAssistant's fans specifically have options beyond the ON/OFF
+	and so there's also homeassistant/{fans_fake}_speed/set and so on
+	"""
 	def __init__(self, hostname="localhost", port=1883, discovery_prefix="homeassistant", username=None, password=None, tls=None):
 		super(MQTTHomeAssistantCommanding, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, prefix=discovery_prefix)
 

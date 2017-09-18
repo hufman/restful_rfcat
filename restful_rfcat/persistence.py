@@ -5,6 +5,7 @@ import os.path
 logger = logging.getLogger(__name__)
 
 class HideyHole(object):
+	""" A simple object that stores state in individual files in a directory """
 	def __init__(self, basepath):
 		self.basepath = basepath
 
@@ -27,6 +28,10 @@ class HideyHole(object):
 			return default
 
 class MQTT(object):
+	""" Publishes state changes over MQTT
+	This can be used to update software instantly
+	For example, OpenHab can receive state updates with the MQTT binding
+	"""
 	def __init__(self, hostname="localhost", port=1883, prefix=None, retain=True, username=None, password=None, tls=None, _publish=None):
 		# save settings for later publishing
 		self.hostname = hostname
@@ -82,6 +87,10 @@ class MQTT(object):
 
 class MQTTHomeAssistant(MQTT):
 	""" A variant of MQTT publishing that supports HomeAssistant's discovery protocol
+	HomeAssistant device configs are posted to homeassistant/{fans_fake}/config
+	This config describes how to control the devices
+	For full effect, use the mqtt.MQTTHomeAssistantCommanding background thread to
+	actually respond to HomeAssistant commands
 	"""
 	def __init__(self, hostname="localhost", port=1883, username=None, password=None, tls=None, retain=True, discovery_prefix="homeassistant", discovery_devices=[], _publish=None):
 		super(MQTTHomeAssistant, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, _publish=_publish)
@@ -164,6 +173,10 @@ class MQTTHomeAssistant(MQTT):
 		return self._hass_topic(key) + '/state'
 
 class Redis(object):
+	""" Stores/loads state from a Redis server
+	The db flag can be set to None to not actually store or load data in Redis
+	The publish flag will additionally send data through Redis PUBSUB
+	"""
 	def __init__(self, hostname="localhost", port=6379, password=None, prefix=None, db=0, publish=True, client=None):
 		self.prefix = prefix
 		if self.prefix is not None:
@@ -208,12 +221,14 @@ class Redis(object):
 				logger.warning("Failure to publish to Redis: %s" % (e.message,))
 
 def set(key, value):
+	# module level accessor method
 	# deferred import to sidestep circular import
 	from restful_rfcat.config import PERSISTENCE
 	for driver in PERSISTENCE:
 		driver.set(key, value)
 
 def get(key):
+	# module level accessor method
 	# deferred import to sidestep circular import
 	from restful_rfcat.config import PERSISTENCE
 	for driver in PERSISTENCE:

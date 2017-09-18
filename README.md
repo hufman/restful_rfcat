@@ -3,6 +3,15 @@ RESTful-RfCat
 
 Several types of devices can easily be controlled by sending a radio command from a radio remote control. The [RfCat USB device](https://smile.amazon.com/dp/B01N3TR4AA/?tag=lumtubo-20&linkCode=as2&linkId=dd8f1d837836925830b5ac693eb5f60d) allows computers to transmit arbitrary radio commands, which RESTful-RfCat uses to provide a unified interface to send commands to a variety of devices.
 
+Features
+--------
+
+- Simple REST interface to get and set the state of rfcat-controllable devices
+- Eavesdropping on physical remotes to detect external state changes
+- Publishing state changes through HTTP Server-Sent Events, MQTT, and Redis
+- Accepts commands through the MQTT bus
+- Automatic integration into HomeAssistant with [MQTT Discovery](https://home-assistant.io/docs/mqtt/discovery/)
+
 Installation
 ------------
 

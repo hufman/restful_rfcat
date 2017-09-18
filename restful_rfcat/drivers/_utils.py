@@ -297,8 +297,15 @@ class ThreeSpeedFanMixinCommand(SubDeviceDriver):
 
 class ThreeSpeedFanMixin(object):
 	""" Implements a fan that has a single set of commands to control fan speed
+	For example, a remote control device that only has: OFF, LOW, MED, HI
 
-	Supported Speeds: OFF, LOW, MED, HI
+	The main device accepts several commands, which get handled by subdevices
+	The /power subdevice presents a virtual power switch
+		It restores the previous speed when turning on
+	The /speed subdevice changes the current speed, and remembers it when powered off
+	The /command subdevice allows direct remote control button pressing
+		It also lets you directly see what the current fan speed is
+		instead of needing to calculate it from /power and /speed
 	"""
 	CLASS = 'fans'
 
@@ -352,6 +359,7 @@ class ThreeSpeedFanMixin(object):
 		self.subdevices['command']._handle_state_update(state)
 
 class LightMixin(object):
+	""" A simple ON/OFF light switch """
 	CLASS = 'lights'
 
 	STATE_COMMANDS = {

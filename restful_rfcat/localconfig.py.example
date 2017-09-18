@@ -1,11 +1,12 @@
 from restful_rfcat.drivers import *
+from restful_rfcat.mqtt import *
+from restful_rfcat.persistence import *
 
 # Easy way to templatize device creation
 hunter_dip_switches = {
 	'bedroom': '1111',
 	'office': '1101',
 	'livingroom': '1011',
-	'diningroom': '0111'
 }
 hampton_dip_switches = {
 	'sunroom': '0111'
@@ -14,7 +15,6 @@ name_labels = {
 	'bedroom': 'Bedroom',
 	'office': 'Office',
 	'livingroom': 'Living Room',
-	'diningroom': 'Dining Room',
 	'sunroom': 'Sun Room'
 }
 
@@ -43,7 +43,57 @@ DEVICES.append(
 	FeitElectricLights(name="patioleds", label="Patio Light String", address="0110110111110101011110101111")
 )
 
+# some extra devices
 DEVICES.append(FakeLight(name="fake", label="Fake light for testing"))
 DEVICES.append(FakeFan(name="fake", label="Fake fan for testing"))
 
+
+###########################
+#### Optional features ####
+###########################
+
+# Enable Sentry logging
+#SENTRY_DSN = 'https://project_id:project_secret@sentry.io/214819'
+
+# Listen for Hunter Ceiling Fan remote control presses
 THREADS = [HunterCeilingEavesdropper()]
+
+# MQTT Publishing example
+PERSISTENCE = [
+	MQTT(
+		hostname='localhost',
+		username='username',
+		password='password',
+		prefix=""
+	)
+]
+# MQTT Commanding example
+THREADS = [
+	MQTTCommanding(
+		hostname='localhost',
+		username='username',
+		password='password',
+		prefix="command/"
+	),
+]
+
+# Advertise devices in HomeAssistant through MQTT
+PERSISTENCE = [
+	MQTTHomeAssistant(
+		hostname='localhost',
+		username='username',
+		password='password',
+		discovery_prefix='homeassistant',   # where homeassistant should watch for devices
+		discovery_devices=DEVICES,   # the list of devices to advertise
+		retain=False                 # don't persist the announcement, during initial setup
+	)
+]
+THREADS = [
+	MQTTHomeAssistantCommanding(
+		hostname='localhost',
+		username='username',
+		password='password',
+		discovery_prefix='homeassistant',   # needs to match above
+	)
+]
+
