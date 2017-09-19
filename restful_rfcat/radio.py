@@ -87,9 +87,11 @@ class OOKRadio(Radio):
 		#self.device.printRadioConfig()
 
 	def _prepare_to_send(self):
+		Radio.device.setModeTX()
 		time.sleep(0.05)
 
 	def _release_send(self):
+		Radio.device.setModeIDLE()
 		time.sleep(0.05)
 
 	def _prepare_to_receive(self):
