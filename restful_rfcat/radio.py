@@ -96,7 +96,17 @@ class OOKRadio(Radio):
 		with Radio.lock:
 			try:
 				self._change_mode('send')
-				Radio.device.RFxmit(bytes, repeat=repeat)
+				# some firmwares don't handle repeat properly
+				# let's do the best we can and fake it
+				# prerepeated_counts: number of $bytes in 255 packet max
+				# prerepeated: $bytes multiplied out as solidly as possible
+				# hardware repeats: do any extra with the flag
+				prerepeated_counts = int(256 / len(bytes))
+				prerepeated_counts = max(1, prerepeated_counts)
+				prerepeated_counts = min(repeat, prerepeated_counts)
+				prerepeated = bytes * prerepeated_counts
+				hardware_repeats = int(repeat / prerepeated_counts)
+				Radio.device.RFxmit(prerepeated, repeat=hardware_repeats)
 			except rflib.chipcon_usb.ChipconUsbTimeoutException:
 				logger.warning("USB Timeout while sending")
 				self.reset_device()
