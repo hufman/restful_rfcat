@@ -310,8 +310,8 @@ class ThreeSpeedFanMixin(object):
 	CLASS = 'fans'
 
 	SUBDEVICES = [
-		ThreeSpeedFanMixinPower,	# explicit power control
 		ThreeSpeedFanMixinSpeed,	# last configured speed
+		ThreeSpeedFanMixinPower,	# explicit power control
 		ThreeSpeedFanMixinCommand	# the last button that was pressed
 	]
 
@@ -339,11 +339,11 @@ class ThreeSpeedFanMixin(object):
 		>>> ThreeSpeedFanMixin().get_available_states()
 		['OFF', 'ON']
 		"""
-		returnable_states = self.SUBDEVICES[0](self).get_available_states()
+		returnable_states = self.subdevices['power'].get_available_states()
 		return sorted(list(set(returnable_states)))
 
 	def get_state(self):
-		d = self.SUBDEVICES[0](self)
+		d = self.subdevices['power']
 		return d.get_state()
 
 	def set_state(self, state):
