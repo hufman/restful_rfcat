@@ -19,7 +19,7 @@ def rest_get_state(device):
 	""" Inside an HTTP GET, return a device's state """
 	def _wrapped(*args, **kwargs):
 		bottle.response.content_type = 'text/plain'
-		return device.get_state()
+		return device.get_state() + '\n'
 	_wrapped.__name__ = 'get_%s' % (device.get_name(),)
 	return _wrapped
 def rest_set_state(device):
@@ -28,7 +28,7 @@ def rest_set_state(device):
 		state = bottle.request.body.read()
 		bottle.response.content_type = 'text/plain'
 		try:
-			return device.set_state(state)
+			return device.set_state(state) + '\n'
 		except ValueError:
 			return bottle.HTTPError(400, "Invalid state: %s" % (state,))
 	_wrapped.__name__ = 'put_%s' % (device.get_name(),)
