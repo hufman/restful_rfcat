@@ -14,12 +14,23 @@ device_list = {}
 
 script_path = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+def human_readable(output):
+	human = False
+	user_agent = bottle.request.environ.get('HTTP_USER_AGENT', '')
+	if 'curl' in user_agent and \
+	   'libcurl' not in user_agent:
+		human = True
+	if human:
+		return output + '\n'
+	else:
+		return output
+
 # define all the devices
 def rest_get_state(device):
 	""" Inside an HTTP GET, return a device's state """
 	def _wrapped(*args, **kwargs):
 		bottle.response.content_type = 'text/plain'
-		return device.get_state() + '\n'
+		return human_readable(device.get_state())
 	_wrapped.__name__ = 'get_%s' % (device.get_name(),)
 	return _wrapped
 def rest_set_state(device):
@@ -28,7 +39,7 @@ def rest_set_state(device):
 		state = bottle.request.body.read()
 		bottle.response.content_type = 'text/plain'
 		try:
-			return device.set_state(state) + '\n'
+			return human_readable(device.set_state(state))
 		except ValueError:
 			return bottle.HTTPError(400, "Invalid state: %s" % (state,))
 	_wrapped.__name__ = 'put_%s' % (device.get_name(),)
