@@ -27,7 +27,7 @@ Configuration
 
 The main purpose of `config.py` is to populate a list of `DEVICES` with objects from `drivers.py`. The object constructor will take parameters specific to the device, like an address code of some sort, as well as a name for URL resources and label for display.
 
-There is also an option to run an EAVESDROPPER thread in the background, which takes over the radio when idle and listens for radio transmissions, updating device state accordingly.
+There is also an option to run various background THREADS, which add abilities such as listening for radio transmissions to update device state or handle state change requests over MQTT.
 
 Device state is persisted to a configurable set of locations, such as a simple file or Redis. An MQTT adapter is provided for integration with home automation systems.
 
