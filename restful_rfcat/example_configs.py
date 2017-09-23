@@ -177,6 +177,26 @@ def get_openhab_mqtt_commanding(mqtt, mqtt_commanding):
 	))
 	return configs
 
+def get_hass_http_switches(http_host):
+	"""
+	>>> config.DEVICES = [FakeLight(name="fake", label="Fake Light"), FakeFan(name="fake", label="Fake Fan")]
+	>>> print(get_hass_http_switches("localhost:3350"))['.homeassistant/configuration.yml']
+	switch:
+	 - platform: rest
+	   name: Fake Light
+	   resource: http://localhost:3350/lights/fake
+	 - platform: rest
+	   name: Fake Fan
+	   resource: http://localhost:3350/fans/fake
+	"""
+	lines = []
+	lines.append('switch:')
+	for d in config.DEVICES:
+		lines.append(' - platform: rest')
+		lines.append('   name: %s' % (d.label,))
+		lines.append('   resource: http://%s/%s' % (http_host, d._state_path()))
+	return {'.homeassistant/configuration.yml': '\n'.join(lines)}
+
 def get_hass(hass):
 	"""
 	>>> config.DEVICES = [FakeLight(name="fake", label="Fake"), FakeFan(name="fake", label="Fake")]
@@ -235,6 +255,8 @@ def get(http_host):
 			configs['OpenHAB via MQTT'] = get_openhab_mqtt_commanding(persistence_modules['MQTT'], thread_modules['MQTTCommanding'])
 		else:
 			configs['OpenHAB via MQTT'] = get_openhab_mqtt(http_host, persistence_modules['MQTT'])
+
+	configs['HomeAssistant HTTP Polling'] = get_hass_http_switches(http_host)
 	if 'MQTTHomeAssistant' in persistence_modules:
 		configs['HomeAssistant via MQTT'] = get_hass(persistence_modules['MQTTHomeAssistant'])
 	return configs
