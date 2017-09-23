@@ -77,33 +77,54 @@ for device in DEVICES:
 
 @bottle.get('/')
 def index():
-	page = markup.page()
-	page.init(script=['app.js'], css=['style.css'])
-	for klass in sorted(device_list.keys()):
-		klass_devices = device_list[klass]
-		page.h2(klass)
-		for name in sorted(klass_devices.keys()):
-			device = klass_devices[name]
-			path = device._state_path()
-			state = device.get_state()
-			if state is None:
-				state = "Unknown"
-			page.li.open()
-			page.span("%s - " % (path,))
-			page.span(state, id='%s-state'%(path,), class_='state')
-			page.li.close()
-			for name,subdev in device.subdevices.items():
-				path = subdev._state_path()
-				state = subdev.get_state()
+	if is_cli():
+		bottle.response.content_type = 'text/plain'
+		lines = []
+		for klass in sorted(device_list.keys()):
+			klass_devices = device_list[klass]
+			for name in sorted(klass_devices.keys()):
+				device = klass_devices[name]
+				path = device._state_path()
+				state = device.get_state()
+				if state is None:
+					state = "Unknown"
+				lines.append("%s - %s" % (path, state))
+				for name,subdev in device.subdevices.items():
+					path = subdev._state_path()
+					state = subdev.get_state()
+					if state is None:
+						state = "Unknown"
+					lines.append("%s - %s" % (path, state))
+		lines.append('')
+		return '\n'.join(lines)
+	else:
+		page = markup.page()
+		page.init(script=['app.js'], css=['style.css'])
+		for klass in sorted(device_list.keys()):
+			klass_devices = device_list[klass]
+			page.h2(klass)
+			for name in sorted(klass_devices.keys()):
+				device = klass_devices[name]
+				path = device._state_path()
+				state = device.get_state()
 				if state is None:
 					state = "Unknown"
 				page.li.open()
 				page.span("%s - " % (path,))
 				page.span(state, id='%s-state'%(path,), class_='state')
 				page.li.close()
-	page.br()
-	page.a('Example configurations', href='examples')
-	return str(page)
+				for name,subdev in device.subdevices.items():
+					path = subdev._state_path()
+					state = subdev.get_state()
+					if state is None:
+						state = "Unknown"
+					page.li.open()
+					page.span("%s - " % (path,))
+					page.span(state, id='%s-state'%(path,), class_='state')
+					page.li.close()
+		page.br()
+		page.a('Example configurations', href='examples')
+		return str(page)
 
 @bottle.get('/examples')
 def examples():
