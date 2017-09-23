@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Radio(object):
-	power = 90
+	power = 255
 	# use the same lock for all instances of the Radio class
 	lock = threading.Lock()
 	device = None

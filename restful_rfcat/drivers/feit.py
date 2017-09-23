@@ -22,7 +22,7 @@ class FeitElectric(DeviceDriver):
 		'blue': '10110101',
 		'white': '10111010'
 	}
-	radio = radio.OOKRadio(433900000, 4880)
+	radio = radio.OOKRadio(433920000, 4880)
 
 	def __init__(self, address, **kwargs):
 		""" address is the prefix before the command string
