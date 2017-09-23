@@ -128,6 +128,12 @@ def stream():
 			if state is None:
 				state = "Unknown"
 			yield 'data: %s=%s\n\n' % (path, state)
+			for name,subdev in device.subdevices.items():
+				path = subdev._state_path()
+				state = subdev.get_state()
+				if state is None:
+					state = "Unknown"
+				yield 'data: %s=%s\n\n' % (path, state)
 
 	with restful_rfcat.pubsub.subscribe() as events:
 		end = time.time() + 3600
