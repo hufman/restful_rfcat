@@ -36,16 +36,15 @@ def shutdown(*args):
 	sys.exit()
 
 if __name__ == '__main__':
-	if len(restful_rfcat.config.THREADS) > 0:
-		signal.signal(signal.SIGINT, shutdown)
-		for runnable_object in restful_rfcat.config.THREADS:
-			runner = runnable_object.run
-			thread = threading.Thread(target=thread_logger, args=(runner,))
-			thread.daemon = True
-			thread.start()
-			threads.append({
-				'thread': thread,
-				'runnable': runnable_object
-			})
+	signal.signal(signal.SIGINT, shutdown)
+	for runnable_object in restful_rfcat.config.THREADS:
+		runner = runnable_object.run
+		thread = threading.Thread(target=thread_logger, args=(runner,))
+		thread.daemon = True
+		thread.start()
+		threads.append({
+			'thread': thread,
+			'runnable': runnable_object
+		})
 
 	restful_rfcat.web.run_webserver()
