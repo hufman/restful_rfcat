@@ -2,6 +2,12 @@ import json
 import logging
 import os.path
 
+try:
+	import collections
+	dict = collections.OrderedDict
+except:
+	pass
+
 logger = logging.getLogger(__name__)
 
 class HideyHole(object):
@@ -98,38 +104,42 @@ class MQTTHomeAssistant(MQTT):
 		if len(discovery_devices) > 0:
 			self.initial_announcement(discovery_prefix, discovery_devices)
 
+	def _device_config(self, device):
+		klass = device.get_class()
+		key = device._state_path()
+		topic = self._hass_topic(key)
+		state_topic = '%s/state' % (topic,)
+		command_topic = '%s/set' % (topic,)
+		config = dict()
+		config['name'] = device.label
+		config['state_topic'] = state_topic
+		config['command_topic'] = command_topic
+		if klass == 'lights':
+			states = device.get_available_states()
+			config['payload_off'] = states[0]
+			config['payload_on'] = states[1]
+		if klass == 'fans':
+			states = device.get_available_states()
+			speed_states = device.subdevices['speed'].get_available_states()
+			topic = self._hass_topic(device.subdevices['speed']._state_path())
+			state_topic = '%s/state' % (topic,)
+			command_topic = '%s/set' % (topic,)
+			config['speed_state_topic'] = state_topic
+			config['speed_command_topic'] = command_topic
+			config['payload_off'] = states[0]	# main device
+			config['payload_low_speed'] = speed_states[0]	# speed device
+			config['payload_medium_speed'] = speed_states[1]	# speed device
+			config['payload_high_speed'] = speed_states[2]	# speed device
+			config['speeds'] = ['low', 'medium', 'high']
+		return config
+
 	def initial_announcement(self, discovery_prefix="homeassistant", discovery_devices=[]):
 		announcements = []
 		for device in discovery_devices:
-			klass = device.get_class()
-			name = device.name
-			key = '%s/%s' % (klass, name)
+			key = device._state_path()
 			topic = self._hass_topic(key)
 			config_topic = '%s/config' % (topic,)
-			state_topic = '%s/state' % (topic,)
-			command_topic = '%s/set' % (topic,)
-			config = {
-				'name': device.label,
-				'state_topic': state_topic,
-				'command_topic': command_topic,
-			}
-			if klass == 'lights':
-				states = device.get_available_states()
-				config['payload_off'] = states[0]
-				config['payload_on'] = states[1]
-			if klass == 'fans':
-				states = device.get_available_states()
-				speed_states = device.subdevices['speed'].get_available_states()
-				topic = self._hass_topic(device.subdevices['speed']._state_path())
-				state_topic = '%s/state' % (topic,)
-				command_topic = '%s/set' % (topic,)
-				config['speed_state_topic'] = state_topic
-				config['speed_command_topic'] = command_topic
-				config['payload_off'] = states[0]	# main device
-				config['payload_low_speed'] = speed_states[0]	# speed device
-				config['payload_medium_speed'] = speed_states[1]	# speed device
-				config['payload_high_speed'] = speed_states[2]	# speed device
-				config['speeds'] = ['low', 'medium', 'high']
+			config = self._device_config(device)
 			announcement = {
 				'topic': config_topic,
 				'payload': json.dumps(config),
