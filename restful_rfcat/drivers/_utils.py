@@ -406,3 +406,8 @@ class LightMixin(object):
 		['OFF', 'ON']
 		"""
 		return sorted(list(set(self.STATE_COMMANDS.values())))
+
+	def set_state(self, state):
+		self._send_command(self._state_to_command(state))
+		self._set(state)
+		return state
