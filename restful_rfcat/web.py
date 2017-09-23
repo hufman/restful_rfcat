@@ -3,6 +3,7 @@ import os
 import time
 from markup import markup
 from restful_rfcat.config import DEVICES, SENTRY_DSN
+import restful_rfcat.example_configs
 import restful_rfcat.pubsub
 import Queue
 
@@ -100,7 +101,33 @@ def index():
 				page.span("%s - " % (path,))
 				page.span(state, id='%s-state'%(path,), class_='state')
 				page.li.close()
+	page.br()
+	page.a('Example configurations', href='examples')
 	return str(page)
+
+@bottle.get('/examples')
+def examples():
+	http_host = bottle.request.environ.get('HTTP_HOST', 'localhost:3350')
+	configs = restful_rfcat.example_configs.get(http_host)
+	if is_cli():
+		bottle.response.content_type = 'text/plain'
+		lines = []
+		for software, software_configs in configs.items():
+			for variant, config in software_configs.items():
+				lines.append("# %s - %s" % (software, variant))
+				lines.append('')
+				lines.append(config)
+				lines.append('')
+		return '\n'.join(lines)
+	else:
+		page = markup.page()
+		page.init(script=['app.js'], css=['style.css'])
+		for software, software_configs in configs.items():
+			page.h2(software)
+			for variant, config in software_configs.items():
+				page.h3('%s - %s' % (software, variant))
+				page.pre(config)
+		return str(page)
 
 @bottle.get('/app.js')
 def appjs():

@@ -9,6 +9,15 @@ span.state.changed {
 	-webkit-animation-name: pulse;
 }
 
+pre {
+	border: 1px solid lightgray;
+	background-color: lightgray;
+	margin: 1em;
+	padding: 1em;
+	padding-right: 3em;
+	display: inline-block;
+}
+
 @keyframes pulse {
 	from {
 		background-color: #87cefa;
