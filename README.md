@@ -1,7 +1,7 @@
 RESTful-RfCat
 =============
 
-Several types of devices can easily be controlled by sending a radio command from a radio remote control. The [RfCat USB device](https://smile.amazon.com/dp/B01N3TR4AA/?tag=lumtubo-20&linkCode=as2&linkId=dd8f1d837836925830b5ac693eb5f60d) allows computers to transmit arbitrary radio commands, which RESTful-RfCat uses to provide a unified interface to send commands to a variety of devices.
+Several types of devices can easily be controlled by sending a radio command from a radio remote control. The [RfCat USB device](https://smile.amazon.com/dp/B01N3TR4AA/?tag=lumtubo-20&linkCode=as2&linkId=dd8f1d837836925830b5ac693eb5f60d) allows computers to transmit arbitrary radio commands, which RESTful-RfCat uses to provide a unified interface to send commands to a variety of devices. This can be used as a component in home automation systems such as OpenHAB or Home Assistant to gain control over these devices with Alexa or Apple Homekit.
 
 Features
 --------
@@ -27,7 +27,7 @@ Configuration
 
 The main purpose of `config.py` is to populate a list of `DEVICES` with objects from `drivers.py`. The object constructor will take parameters specific to the device, like an address code of some sort, as well as a name for URL resources and label for display.
 
-There is also an option to run various background THREADS, which add abilities such as listening for radio transmissions to update device state or handle state change requests over MQTT.
+There is also an option to run various background `THREADS`, which add abilities such as listening for radio transmissions to update device state or handle state change requests over MQTT.
 
 Device state is persisted to a configurable set of locations, such as a simple file or Redis. An MQTT adapter is provided for integration with home automation systems.
 
