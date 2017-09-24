@@ -89,11 +89,11 @@ def _openhab_http_post(http_host, d):
 def get_openhab_poll(http_host):
 	"""
 	>>> config.DEVICES = [FakeLight(name="fake", label="Fake")]
-	>>> print(get_openhab_poll('localhost:3350')['conf/items/rfcat.items'])
+	>>> print(get_openhab_poll('localhost:3350')['HTTP Polling'])
 	Switch rfcat_lights_fake "Fake" <light> [Lighting] { http="<[http://localhost:3350/lights/fake:300:REGEX((.*))] >[OFF:POST:http://localhost:3350/lights/fake:OFF] >[ON:POST:http://localhost:3350/lights/fake:ON]" }
 	"""
-	configs = {}
-	configs['conf/items/rfcat.items'] = '\n'.join((
+	configs = dict()
+	configs['HTTP Polling'] = '\n'.join((
 		'%s { http="%s %s" }' % (
 			_openhab_item(d),
 			_openhab_http_get(http_host, d),
@@ -144,11 +144,11 @@ def get_openhab_mqtt(http_host, mqtt):
 	>>> mqtt = mock.Mock()
 	>>> mqtt._set_topic = lambda x: x
 	>>> config.DEVICES = [FakeLight(name="fake", label="Fake")]
-	>>> print(get_openhab_mqtt('localhost:3350', mqtt)['conf/items/rfcat.items'])
+	>>> print(get_openhab_mqtt('localhost:3350', mqtt)['HTTP Post + MQTT Subscribe'])
 	Switch rfcat_lights_fake "Fake" <light> [Lighting] { mqtt="<[broker:lights/fake:state:REGEX((.*))]" http=">[OFF:POST:http://localhost:3350/lights/fake:OFF] >[ON:POST:http://localhost:3350/lights/fake:ON]" }
 	"""
-	configs = {}
-	configs['conf/items/rfcat.items'] = '\n'.join((
+	configs = dict()
+	configs['HTTP Post + MQTT Subscribe'] = '\n'.join((
 		'%s { mqtt="%s" http="%s" }' % (
 			_openhab_item(d),
 			_openhab_mqtt_get(mqtt, d),
@@ -164,11 +164,11 @@ def get_openhab_mqtt_commanding(mqtt, mqtt_commanding):
 	>>> mqtt_commanding = mock.Mock()
 	>>> mqtt_commanding.prefix = 'command'
 	>>> config.DEVICES = [FakeLight(name="fake", label="Fake")]
-	>>> print(get_openhab_mqtt_commanding(mqtt, mqtt_commanding)['conf/items/rfcat.items'])
+	>>> print(get_openhab_mqtt_commanding(mqtt, mqtt_commanding)['MQTT PubSub'])
 	Switch rfcat_lights_fake "Fake" <light> [Lighting] { mqtt="<[broker:lights/fake:state:REGEX((.*))] >[broker:command/lights/fake:command:OFF:OFF] >[broker:command/lights/fake:command:ON:ON]" }
 	"""
-	configs = {}
-	configs['conf/items/rfcat.items'] = '\n'.join((
+	configs = dict()
+	configs['MQTT PubSub'] = '\n'.join((
 		'%s { mqtt="%s %s" }' % (
 			_openhab_item(d),
 			_openhab_mqtt_get(mqtt, d),
@@ -180,7 +180,7 @@ def get_openhab_mqtt_commanding(mqtt, mqtt_commanding):
 def get_hass_http_switches(http_host):
 	"""
 	>>> config.DEVICES = [FakeLight(name="fake", label="Fake Light"), FakeFan(name="fake", label="Fake Fan")]
-	>>> print(get_hass_http_switches("localhost:3350"))['.homeassistant/configuration.yml']
+	>>> print(get_hass_http_switches("localhost:3350"))['Restful Switches']
 	switch:
 	 - platform: rest
 	   name: Fake Light
@@ -195,13 +195,13 @@ def get_hass_http_switches(http_host):
 		lines.append(' - platform: rest')
 		lines.append('   name: %s' % (d.label,))
 		lines.append('   resource: http://%s/%s' % (http_host, d._state_path()))
-	return {'.homeassistant/configuration.yml': '\n'.join(lines)}
+	return {'Restful Switches': '\n'.join(lines)}
 
 def get_hass(hass):
 	"""
 	>>> config.DEVICES = [FakeLight(name="fake", label="Fake"), FakeFan(name="fake", label="Fake")]
 	>>> from restful_rfcat.persistence import MQTTHomeAssistant
-	>>> print(get_hass(MQTTHomeAssistant(_publish=mock.Mock())))['.homeassistant/configuration.yml']  # doctest: +SKIP
+	>>> print(get_hass(MQTTHomeAssistant(_publish=mock.Mock())))['MQTT PubSub']  # doctest: +SKIP
 	fan:
 	 - platform: mqtt
 	   name: "Fake"
@@ -240,8 +240,8 @@ def get_hass(hass):
 		for k,v in d.items():
 			lines.append('   %s: %s' % (k,json.dumps(v)))
 
-	configs = {}
-	configs['.homeassistant/configuration.yml'] = '\n'.join(lines)
+	configs = dict()
+	configs['MQTT PubSub'] = '\n'.join(lines)
 	return configs
 
 def get(http_host):
@@ -249,14 +249,14 @@ def get(http_host):
 	thread_modules = dict(((t.__class__.__name__,t) for t in config.THREADS))
 	configs = dict()
 	configs['curl'] = get_curl(http_host)
-	configs['OpenHAB HTTP Polling'] = get_openhab_poll(http_host)
+	configs['OpenHAB'] = get_openhab_poll(http_host)
 	if 'MQTT' in persistence_modules:
 		if 'MQTTCommanding' in thread_modules:
-			configs['OpenHAB via MQTT'] = get_openhab_mqtt_commanding(persistence_modules['MQTT'], thread_modules['MQTTCommanding'])
+			configs['OpenHAB'].update(get_openhab_mqtt_commanding(persistence_modules['MQTT'], thread_modules['MQTTCommanding']))
 		else:
-			configs['OpenHAB via MQTT'] = get_openhab_mqtt(http_host, persistence_modules['MQTT'])
+			configs['OpenHAB'].update(get_openhab_mqtt(http_host, persistence_modules['MQTT']))
 
-	configs['HomeAssistant HTTP Polling'] = get_hass_http_switches(http_host)
+	configs['HomeAssistant'] = get_hass_http_switches(http_host)
 	if 'MQTTHomeAssistant' in persistence_modules:
-		configs['HomeAssistant via MQTT'] = get_hass(persistence_modules['MQTTHomeAssistant'])
+		configs['HomeAssistant'].update(get_hass(persistence_modules['MQTTHomeAssistant']))
 	return configs
