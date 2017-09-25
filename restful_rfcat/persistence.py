@@ -1,5 +1,6 @@
 import json
 import logging
+import mock
 import os.path
 
 try:
@@ -79,6 +80,12 @@ class MQTT(object):
 		return default
 
 	def _set_topic(self, key):
+		"""
+		>>> print(MQTT(_publish=mock.Mock())._set_topic('fans/fake'))
+		fans/fake
+		>>> print(MQTT(prefix="test", _publish=mock.Mock())._set_topic('fans/fake'))
+		test/fans/fake
+		"""
 		topic = key
 		if self.prefix is not None:
 			topic = self.prefix + '/' + key
@@ -181,6 +188,131 @@ class MQTTHomeAssistant(MQTT):
 
 	def _set_topic(self, key):
 		return self._hass_topic(key) + '/state'
+
+class MQTTStateful(object):
+	""" A MQTT client that stays connected and retains state
+	Useful for loading state back out of a retained MQTT topic
+	"""
+	def __init__(self, hostname="localhost", port=1883, prefix=None, username=None, password=None, tls=None, _client=None):
+		self.hostname = hostname
+		self.port = port
+		self.prefix = prefix
+
+		if _client is None:
+			import paho.mqtt as mqtt
+			self.client = mqtt.client.Client()
+			self.client.on_message = self._on_message
+		else:
+			self.client = _client
+		if username is not None:
+			self.client.username_pw_set(username, password)
+		if tls is not None:
+			self.client.tls_set(**tls)
+
+		self.states = {}
+
+		self.run()
+
+	# helper functions
+	def _set_topic(self, key):
+		"""
+		>>> print(MQTTStateful(_client=mock.Mock())._set_topic('fans/fake'))
+		fans/fake
+		>>> print(MQTTStateful(prefix="test", _client=mock.Mock())._set_topic('fans/fake'))
+		test/fans/fake
+		"""
+		topic = key
+		if self.prefix is not None:
+			topic = self.prefix + '/' + key
+		return topic
+
+	def _subscription_topics(self):
+		"""
+		Returns a list of topics for this stateful mqtt client
+		>>> MQTTStateful(_client=mock.Mock())._subscription_topics()
+		['+/+', '+/+/+']
+		>>> MQTTStateful(prefix="test", _client=mock.Mock())._subscription_topics()
+		['test/+/+', 'test/+/+/+']
+		"""
+		if self.prefix is not None:
+			return [
+				"%s/+/+" % (self.prefix.rstrip('/'),),
+				"%s/+/+/+" % (self.prefix.rstrip('/'),),
+			]
+		else:
+			return ["+/+", "+/+/+"]
+
+	def _publish_multiple(self, msgs):
+		if len(msgs) > 0:
+			for msg in msgs:
+				if isinstance(msg, dict):
+					self.client.publish(**msg)
+				else:
+					self.client.publish(*msg)
+
+	def _publish_single(self, topic, payload):
+		self.client.publish(topic, payload)
+
+	def _on_connect(self, client, userdata, flags, rc):
+		if rc != 0:
+			raise mqtt.MQTTException(mqtt.client.connack_string(rc))
+
+	def _on_message(self, mqttc, obj, msg):
+		topic = msg.topic
+		data = msg.payload
+		logger.info("Incoming MQTT broadcast: %s %s" % (msg.topic, msg.payload))
+		self.states[topic] = data
+
+	# connect to the broker
+	def run(self):
+		self.client.connect(self.hostname, self.port, 60)
+		for topic in self._subscription_topics():
+			self.client.subscribe(topic)
+		self.client.loop_start()  # start a thread
+		
+	def stop(self):
+		self.client.disconnect()
+
+	# act like a persistence object
+	def get(self, key, default=None):
+		# use _set_topic to figure out where we would've saved before
+		return self.states.get(self._set_topic(key), default)
+
+	def set(self, key, value):
+		topic = self._set_topic(key)
+		self._publish_single(topic, value)
+
+class MQTTStatefulHomeAssistant(MQTTStateful, MQTTHomeAssistant):
+	""" A variant of MQTT publishing that supports HomeAssistant's discovery protocol
+	Combined with using MQTTStateful to reload retained state on start
+	HomeAssistant device configs are posted to homeassistant/{fans_fake}/config
+	This config describes how to control the devices
+	For full effect, use the mqtt.MQTTHomeAssistantCommanding background thread to
+	actually respond to HomeAssistant commands
+	"""
+	def __init__(self, hostname="localhost", port=1883, username=None, password=None, tls=None, retain=True, discovery_prefix="homeassistant", discovery_devices=[], _client=None):
+		self.discovery_devices = discovery_devices
+		self.discovery_prefix = discovery_prefix
+		super(MQTTStatefulHomeAssistant, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, prefix=discovery_prefix, _client=_client)
+
+	def _on_connect(self, client, userdata, flags, rc):
+		super(MQTTStatefulHomeAssistant, self)._on_connect(client, userdata, flags, rc)
+		if len(self.discovery_devices) > 0:
+			self.initial_announcement(self.prefix, self.discovery_devices)
+
+	def _set_topic(self, key):
+		# Use HASS's topic for setting things
+		return self._hass_topic(key) + '/state'
+
+	def _subscription_topics(self):
+		"""
+		Returns a list of topics for this stateful mqtt client
+		>>> MQTTStatefulHomeAssistant(_client=mock.Mock())._subscription_topics()
+		['homeassistant/+/+/state']
+		>>> MQTTStatefulHomeAssistant(discovery_prefix="test", _client=mock.Mock())._subscription_topics()
+		['test/+/+/state']
+		"""
+		return ["%s/+/+/state" % (self.prefix.rstrip('/'),)]
 
 class Redis(object):
 	""" Stores/loads state from a Redis server

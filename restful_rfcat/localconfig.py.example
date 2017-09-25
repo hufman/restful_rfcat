@@ -60,7 +60,7 @@ THREADS = [HunterCeilingEavesdropper()]
 
 # MQTT Publishing example
 PERSISTENCE = [
-	MQTT(
+	MQTTStateful(
 		hostname='localhost',
 		username='username',
 		password='password',
@@ -79,7 +79,7 @@ THREADS = [
 
 # Advertise devices in HomeAssistant through MQTT
 PERSISTENCE = [
-	MQTTHomeAssistant(
+	MQTTStatefulHomeAssistant(
 		hostname='localhost',
 		username='username',
 		password='password',
