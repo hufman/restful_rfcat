@@ -7,7 +7,7 @@ try:
 except:
 	pass
 
-from restful_rfcat import config
+from restful_rfcat import config, mqtt, persistence
 
 # used for testing
 from restful_rfcat.drivers import FakeFan, FakeLight
@@ -244,19 +244,29 @@ def get_hass(hass):
 	configs['MQTT PubSub'] = '\n'.join(lines)
 	return configs
 
+def _find_object(objects, klass):
+	for i in objects:
+		if isinstance(i, klass):
+			return i
+	return None
+
 def get(http_host):
-	persistence_modules = dict(((p.__class__.__name__,p) for p in config.PERSISTENCE))
-	thread_modules = dict(((t.__class__.__name__,t) for t in config.THREADS))
 	configs = dict()
 	configs['curl'] = get_curl(http_host)
 	configs['OpenHAB'] = get_openhab_poll(http_host)
-	if 'MQTT' in persistence_modules:
-		if 'MQTTCommanding' in thread_modules:
-			configs['OpenHAB'].update(get_openhab_mqtt_commanding(persistence_modules['MQTT'], thread_modules['MQTTCommanding']))
+	# add options for openhab/mqtt
+	persistence_mqtt = _find_object(config.PERSISTENCE, persistence.MQTT)
+	if persistence_mqtt is None:
+		persistence_mqtt = _find_object(config.PERSISTENCE, persistence.MQTTStateful)
+	if persistence_mqtt:
+		commanding_mqtt = _find_object(config.THREADS, mqtt.MQTTCommanding)
+		if commanding_mqtt is not None:
+			configs['OpenHAB'].update(get_openhab_mqtt_commanding(persistence_mqtt, commanding_mqtt))
 		else:
-			configs['OpenHAB'].update(get_openhab_mqtt(http_host, persistence_modules['MQTT']))
+			configs['OpenHAB'].update(get_openhab_mqtt(http_host, persistence_mqtt))
 
 	configs['HomeAssistant'] = get_hass_http_switches(http_host)
-	if 'MQTTHomeAssistant' in persistence_modules:
-		configs['HomeAssistant'].update(get_hass(persistence_modules['MQTTHomeAssistant']))
+	persistence_hass = _find_object(config.PERSISTENCE, persistence.MQTTHomeAssistant)
+	if persistence_hass:
+		configs['HomeAssistant'].update(get_hass(persistence_hass))
 	return configs
