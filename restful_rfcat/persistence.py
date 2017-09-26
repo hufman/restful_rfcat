@@ -106,7 +106,7 @@ class MQTTHomeAssistant(MQTT):
 	actually respond to HomeAssistant commands
 	"""
 	def __init__(self, hostname="localhost", port=1883, username=None, password=None, tls=None, retain=True, discovery_prefix="homeassistant", discovery_devices=[], _publish=None):
-		super(MQTTHomeAssistant, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, _publish=_publish)
+		super(MQTTHomeAssistant, self).__init__(hostname=hostname, port=port, retain=retain, username=username, password=password, tls=tls, _publish=_publish)
 		self.discovery_prefix = discovery_prefix
 		if len(discovery_devices) > 0:
 			self.initial_announcement(discovery_prefix, discovery_devices)
@@ -193,10 +193,11 @@ class MQTTStateful(object):
 	""" A MQTT client that stays connected and retains state
 	Useful for loading state back out of a retained MQTT topic
 	"""
-	def __init__(self, hostname="localhost", port=1883, prefix=None, username=None, password=None, tls=None, _client=None):
+	def __init__(self, hostname="localhost", port=1883, prefix=None, retain=True, username=None, password=None, tls=None, _client=None):
 		self.hostname = hostname
 		self.port = port
 		self.prefix = prefix
+		self.retain = retain
 
 		if _client is None:
 			import paho.mqtt as mqtt
@@ -246,12 +247,13 @@ class MQTTStateful(object):
 		if len(msgs) > 0:
 			for msg in msgs:
 				if isinstance(msg, dict):
+					msg.setdefault('retain', self.retain)
 					self.client.publish(**msg)
 				else:
 					self.client.publish(*msg)
 
 	def _publish_single(self, topic, payload):
-		self.client.publish(topic, payload)
+		self.client.publish(topic, payload, retain=self.retain)
 
 	def _on_connect(self, client, userdata, flags, rc):
 		if rc != 0:
@@ -293,7 +295,7 @@ class MQTTStatefulHomeAssistant(MQTTStateful, MQTTHomeAssistant):
 	def __init__(self, hostname="localhost", port=1883, username=None, password=None, tls=None, retain=True, discovery_prefix="homeassistant", discovery_devices=[], _client=None):
 		self.discovery_devices = discovery_devices
 		self.discovery_prefix = discovery_prefix
-		super(MQTTStatefulHomeAssistant, self).__init__(hostname=hostname, port=port, username=username, password=password, tls=tls, prefix=discovery_prefix, _client=_client)
+		super(MQTTStatefulHomeAssistant, self).__init__(hostname=hostname, port=port, retain=retain, username=username, password=password, tls=tls, prefix=discovery_prefix, _client=_client)
 
 	def _on_connect(self, client, userdata, flags, rc):
 		super(MQTTStatefulHomeAssistant, self)._on_connect(client, userdata, flags, rc)
