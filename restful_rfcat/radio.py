@@ -105,7 +105,7 @@ class OOKRadio(Radio):
 		time.sleep(0.05)
 		self.device.setModeIDLE()
 
-	def send(self, bytes, repeat=25):
+	def send(self, bytes, repeat=10):
 		with Radio.lock:
 			try:
 				self._change_mode('send')
