@@ -2,6 +2,7 @@
 from restful_rfcat.drivers.hunter import HunterCeilingFan, HunterCeilingLight, HunterCeilingEavesdropper
 from restful_rfcat.drivers.hamptonbay import HamptonCeilingFan, HamptonCeilingLight
 from restful_rfcat.drivers.feit import FeitElectricLights
+from restful_rfcat.drivers.lirc import LircLight, LircThreeWayFan
 
 # example implementation
 from restful_rfcat.drivers._utils import DeviceDriver, LightMixin, ThreeSpeedFanMixin

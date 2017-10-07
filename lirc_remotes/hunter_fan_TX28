@@ -1,0 +1,46 @@
+#
+# brand:             Hunter
+# model:             TX28
+# supported devices: Ceiling fan. Requires 350.000 RF transmitter
+#
+# I looked up the FCC id on the back of the remote (INT2TX28) to
+# determine the frequency of the remote (350.000MHz) at
+# http://www.fcc.gov/oet/fccid/
+#
+
+begin remote
+
+  name   TX28
+  bits  7
+  flags SPACE_FIRST
+  eps            30
+  aeps          100
+  pre_data_bits 4
+# Hex value of 4 dip switch code settings
+# The remote is labelled 4321
+# The bits in pre_data are ordered 1234
+# A dip switch with #2 unconnected should have a pre_data of 0b1011 or 0x0b
+  pre_data      0x0b
+  header        190 380
+  plead         190
+
+# Even though space is sent first, pulse length is still
+# specified first.
+  zero  190 380
+  one   380 190
+
+  min_repeat    5
+
+  gap   6650
+
+      begin codes
+        FAN_HIGH        0x74
+        FAN_MED         0x72
+        FAN_LOW         0x71
+        FAN_OFF         0x79
+        LIGHT_TOGGLE    0x78
+      end codes
+
+end remote
+
+
