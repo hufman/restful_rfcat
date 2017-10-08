@@ -40,6 +40,8 @@ The following remote-controlled devices have been successfully tested, similar d
 - Hampton Bay Windward IV 52-WWDIV  [FCC ID](https://fccid.io/RGB-52WWDIVS)
 - Feit Electric String Lights  [FCC ID](https://fccid.io/2AIH2RF20160226B)
 
+Additionally, there is basic support for parsing LIRC remote control configurations. Most basic devices can be configured as an LIRC description instead of needing to write a custom Python module, for example the [Hampton Bay UC7078T](http://lirc.sourceforge.net/remotes/hampton_bay/UC7078T).
+
 Development
 -----------
 

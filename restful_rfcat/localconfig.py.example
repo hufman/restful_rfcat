@@ -43,6 +43,11 @@ DEVICES.append(
 	FeitElectricLights(name="patioleds", label="Patio Light String", address="0110110111110101011110101111")
 )
 
+# LIRC config file
+DEVICES.append(
+	LircLight(name="porch", label="Porch", config_filename="hampton_bay_UC7078T", pre_data=0x0b, radio_frequency=303875000)
+)
+
 # some extra devices
 DEVICES.append(FakeLight(name="fake", label="Fake light for testing"))
 DEVICES.append(FakeFan(name="fake", label="Fake fan for testing"))

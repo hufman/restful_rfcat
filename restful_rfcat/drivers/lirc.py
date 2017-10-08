@@ -368,6 +368,14 @@ class Lirc(DeviceDriver):
 	devices = {}
 
 	def __init__(self, config_filename, radio_frequency=None, custom_radio=None, **kwargs):
+		""" Controls a device as described by an LIRC remote control config
+
+		config_filename is a file relative to lirc_remotes configuration, or absolute path
+		that describes a remote control's protocol
+		radio_frequency is the hz to send the commands, or a custom_radio can be given
+		Extra options can be passed to override the configuration, such as specifying
+		custom pre_data options for different remote control dip switch settings
+		"""
 		parent_kwargs = {
 			'name': kwargs.pop('name'),
 			'label': kwargs.pop('label')
